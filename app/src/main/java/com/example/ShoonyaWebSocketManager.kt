@@ -77,11 +77,19 @@ object ShoonyaWebSocketManager {
                 }
                 ws.send(connectJson.toString())
                 
-                // Subscribe to MCX Commodities
+                // Subscribe to MCX Commodities dynamically for 2026/2027
                 val subscribeJson = JSONObject().apply {
                     put("t", "t")
-                    // Subscribe to common MCX instruments using Shoonya exchange format
-                    put("k", "MCX|GOLDM23OCTFUT#MCX|SILVERMIC23NOVFUT#MCX|CRUDEOIL23OCTFUT")
+                    val subscriptions = mutableListOf<String>()
+                    val symbols = listOf("GOLD", "GOLDM", "SILVER", "SILVERM", "SILVERMIC", "CRUDEOIL", "CRUDEOILM", "NATURALGAS")
+                    val months = listOf("JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC")
+                    for (sym in symbols) {
+                        for (month in months) {
+                            subscriptions.add("MCX|${sym}26${month}FUT")
+                            subscriptions.add("MCX|${sym}27${month}FUT")
+                        }
+                    }
+                    put("k", subscriptions.joinToString("#"))
                 }
                 ws.send(subscribeJson.toString())
             }
@@ -130,11 +138,27 @@ object ShoonyaWebSocketManager {
             if (ltp != null && ts.isNotEmpty()) {
                 val currentQuotes = _liveQuotes.value.toMutableMap()
                 val existing = currentQuotes[ts]
-                if (existing != null) {
-                    currentQuotes[ts] = existing.copy(price = ltp, change = changeStr.toDoubleOrNull() ?: existing.change)
+                val updatedQuote = if (existing != null) {
+                    existing.copy(price = ltp, change = changeStr.toDoubleOrNull() ?: existing.change)
                 } else {
-                    currentQuotes[ts] = CommodityQuote(ts, ts, ltp, changeStr.toDoubleOrNull() ?: 0.0, 0.0, 0.0, 0.0, 0, "SHOONYA")
+                    CommodityQuote(ts, ts, ltp, changeStr.toDoubleOrNull() ?: 0.0, 0.0, 0.0, 0.0, 0, "SHOONYA")
                 }
+                currentQuotes[ts] = updatedQuote
+                
+                // Map back to active base symbol like "GOLD", "GOLDM"
+                var cleanTs = ts
+                val bases = listOf("GOLD", "SILVER", "CRUDEOIL", "NATURALGAS", "COPPER", "ZINC", "ALUMINIUM", "NICKEL")
+                for (base in bases) {
+                    if (ts.startsWith(base + "M") || ts.startsWith(base + "MIC")) {
+                        cleanTs = base + "M"
+                        break
+                    } else if (ts.startsWith(base)) {
+                        cleanTs = base
+                        break
+                    }
+                }
+                currentQuotes[cleanTs] = updatedQuote.copy(symbol = cleanTs, name = cleanTs)
+                
                 _liveQuotes.value = currentQuotes
             }
         } catch (e: Exception) {
