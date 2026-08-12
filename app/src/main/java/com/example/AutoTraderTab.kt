@@ -114,14 +114,14 @@ fun AutoTraderTabContent(modifier: Modifier = Modifier) {
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = "Practical Risk & Brokerage Protection Active",
+                            text = "Virtual Portfolio Risk Management Active",
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF15803D)
                         )
                     }
                     Text(
-                        text = "• Strictly MCX Commodities Only (9:00 AM - 11:30 PM IST)\n• Real-Time Dhan WebSockets: Trades executed using live tick streaming P&L\n• Capital Limit: ₹2,00,000 Total Commodity Allocation (₹50,000 per trade)",
+                        text = "• Strictly MCX Commodities Only (9:00 AM - 11:30 PM IST)\n• Real-Time Shoonya WebSockets: Trades executed using live tick streaming P&L\n• Capital Limit: ₹2,00,000 Total Commodity Allocation (₹50,000 per trade)",
                         fontSize = 10.sp,
                         color = Color(0xFF166534),
                         lineHeight = 14.sp
@@ -570,7 +570,7 @@ fun AutoTraderTabContent(modifier: Modifier = Modifier) {
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "Auto Trading Status: Active",
+                        text = "Virtual Trading (Paper Trading) Mode: Active",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF16A34A)
@@ -624,7 +624,7 @@ fun ActiveTradeCardItem(trade: VirtualTrade) {
     
     val grossProfit = trade.allocatedAmount * (profitPct / 100.0)
     val turnover = trade.allocatedAmount * 2.0
-    val brokerageDetails = IndianCommodityRepository.calculateDhanBrokerage(turnover, isSell = true, isOptions = false)
+    val brokerageDetails = IndianCommodityRepository.calculateShoonyaCharges(turnover, isSell = true, isOptions = false)
     val netProfit = grossProfit - brokerageDetails.totalCharges
 
     Card(
@@ -1094,7 +1094,7 @@ fun ExecutedCommodityTradeCard(trade: VirtualTrade) {
                         }
                         Text("Timestamp: ${sdf.format(Date(it))}", fontSize = 9.sp, color = Color(0xFF0284C7))
                     }
-                    Text("Net P&L (After Dhan Brokerage & Govt Charges):", fontSize = 8.5.sp, color = Color(0xFF64748B))
+                    Text("Net P&L (After Shoonya Zero Brokerage & Govt Charges):", fontSize = 8.5.sp, color = Color(0xFF64748B))
                 }
 
                 Column(horizontalAlignment = Alignment.End) {
@@ -1158,7 +1158,7 @@ fun CalendarPerformanceView(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Executed Commodity Trades & Performance Logs", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
-                    Text("Net P&L calculated after Dhan brokerage and government charges", fontSize = 9.5.sp, color = Color(0xFF64748B))
+                    Text("Net P&L calculated after Shoonya zero brokerage and government charges", fontSize = 9.5.sp, color = Color(0xFF64748B))
                 }
             }
         }

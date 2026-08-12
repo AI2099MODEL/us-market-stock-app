@@ -65,16 +65,9 @@ object IndianCommodityRepository {
     /**
      * Fetch Dhan Brokerage Calculator charges for MCX Commodity Futures and Options.
      */
-    fun calculateDhanBrokerage(turnover: Double, isSell: Boolean, isOptions: Boolean = false): BrokerageDetails {
-        val apiKey = try { BuildConfig.DHAN_API_KEY } catch (e: Exception) { "" }
-        if (!apiKey.isNullOrBlank() && apiKey != "MY_DHAN_API_KEY" && apiKey != "YOUR_API_KEY") {
-            try {
-                // If Dhan provides brokerage API integration, we can query it here. Otherwise compute standard MCX tariff.
-            } catch (e: Exception) {}
-        }
-        // Dhan standard commodity tariff:
-        // Flat ₹20 per order or 0.03% whichever is lower
-        val brokerage = minOf(20.0, turnover * 0.0003)
+    fun calculateShoonyaCharges(turnover: Double, isSell: Boolean, isOptions: Boolean = false): BrokerageDetails {
+        // Shoonya offers zero brokerage across all segments forever.
+        val brokerage = 0.0
         // Exchange transaction charge (MCX) approx 0.0026%
         val exchangeCharges = turnover * 0.000026
         // GST 18% on (brokerage + exchange charges)

@@ -153,7 +153,7 @@ object MarketEngine {
                     val isOptionTrade = trade.name.contains("Option") || trade.ticker.contains("CE") || trade.ticker.contains("PE")
                     
                     val turnover = trade.allocatedAmount * 2.0
-                    val brokerageDetails = IndianCommodityRepository.calculateDhanBrokerage(turnover, isSell = true, isOptions = false)
+                    val brokerageDetails = IndianCommodityRepository.calculateShoonyaCharges(turnover, isSell = true, isOptions = false)
                     val mcxFees = brokerageDetails.totalCharges
 
                     val newHighest = if (trade.targetPrice < trade.entryPrice) minOf(minOf(trade.highestPrice, trade.entryPrice), currentPrice) else maxOf(maxOf(trade.highestPrice, trade.entryPrice), currentPrice)
@@ -276,7 +276,7 @@ object MarketEngine {
                         
                         // Calculate Indian MCX Brokerage & Regulatory Charges (Brokerage, STT, Exchange, GST, SEBI, Stamp Duty) via Dhan
                         val turnover = trade.allocatedAmount * 2.0
-                        val brokerageDetails = IndianCommodityRepository.calculateDhanBrokerage(turnover, isSell = true, isOptions = false)
+                        val brokerageDetails = IndianCommodityRepository.calculateShoonyaCharges(turnover, isSell = true, isOptions = false)
                         val mcxFees = brokerageDetails.totalCharges
 
                         val newHighest = if (trade.targetPrice < trade.entryPrice) minOf(minOf(trade.highestPrice, trade.entryPrice), currentPrice) else maxOf(maxOf(trade.highestPrice, trade.entryPrice), currentPrice)
@@ -669,7 +669,7 @@ object MarketEngine {
                     val profitPct = if (isShort) ((trade.entryPrice - trade.currentPrice) / trade.entryPrice) * 100.0 else ((trade.currentPrice - trade.entryPrice) / trade.entryPrice) * 100.0
                 val turnover = trade.allocatedAmount * 2.0
                 val isOptionTrade = trade.name.contains("Option") || trade.ticker.contains("CE") || trade.ticker.contains("PE")
-                val brokerageDetails = IndianCommodityRepository.calculateDhanBrokerage(turnover, isSell = true, isOptions = false)
+                val brokerageDetails = IndianCommodityRepository.calculateShoonyaCharges(turnover, isSell = true, isOptions = false)
                 val grossProfit = trade.allocatedAmount * (profitPct / 100.0)
                 val netProfitAmt = grossProfit - brokerageDetails.totalCharges
                 val squared = trade.copy(
@@ -694,7 +694,7 @@ object MarketEngine {
                     val profitPct = if (isShort) ((trade.entryPrice - trade.currentPrice) / trade.entryPrice) * 100.0 else ((trade.currentPrice - trade.entryPrice) / trade.entryPrice) * 100.0
             val turnover = trade.allocatedAmount * 2.0
             val isOptionTrade = trade.name.contains("Option") || trade.ticker.contains("CE") || trade.ticker.contains("PE")
-            val brokerageDetails = IndianCommodityRepository.calculateDhanBrokerage(turnover, isSell = true, isOptions = false)
+            val brokerageDetails = IndianCommodityRepository.calculateShoonyaCharges(turnover, isSell = true, isOptions = false)
             val grossProfit = trade.allocatedAmount * (profitPct / 100.0)
             val netProfitAmt = grossProfit - brokerageDetails.totalCharges
             val updated = trade.copy(
