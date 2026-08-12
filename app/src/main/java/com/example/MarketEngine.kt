@@ -48,6 +48,7 @@ object MarketEngine {
         if (current.size > 100) current.removeAt(current.size - 1)
         engineLogs.value = current
         Log.d(TAG, log)
+        SupabaseSyncManager.publishLog(log)
     }
 
     suspend fun updateActiveTradesPrices() = withContext(Dispatchers.IO) {
@@ -362,6 +363,7 @@ object MarketEngine {
                                     exitTime = System.currentTimeMillis()
                                 )
                                 db.virtualTradeDao().updateTrade(updatedTrade)
+                                SupabaseSyncManager.publishTrade(updatedTrade)
                                 addLog("⏰ Final 5-Min Market Close Rule: Auto squared off Option on ${trade.ticker} at ₹${String.format("%.2f", currentPrice)} (Net P&L: ₹${String.format("%.2f", netProfitAmt)} INR) to eliminate overnight decay risk.")
                                 return@async
                             } else if (isLast45Mins && netProfitAmt > 0.0) {
@@ -371,6 +373,7 @@ object MarketEngine {
                                     exitTime = System.currentTimeMillis()
                                 )
                                 db.virtualTradeDao().updateTrade(updatedTrade)
+                                SupabaseSyncManager.publishTrade(updatedTrade)
                                 addLog("💰 45-Min Market Close Rule: Booked Option Profit on ${trade.ticker} at +${String.format("%.2f", profitPct)}% (+₹${String.format("%.2f", netProfitAmt)} INR net). Moving capital over to BTST Equity.")
                                 return@async
                             }
@@ -393,6 +396,7 @@ object MarketEngine {
                                 exitTime = System.currentTimeMillis()
                             )
                             db.virtualTradeDao().updateTrade(updatedTrade)
+                            SupabaseSyncManager.publishTrade(updatedTrade)
                             addLog("🎉 BOOKED PROFIT (+${String.format("%.2f", profitPct)}%) on ${trade.ticker} at ₹${String.format("%.2f", currentPrice)} (+₹${String.format("%.2f", netProfitAmt)} INR net after ₹${String.format("%.2f", mcxFees)} MCX brokerage & charges)")
                         } else if (slHit) {
                             updatedTrade = updatedTrade.copy(
@@ -401,9 +405,11 @@ object MarketEngine {
                                 exitTime = System.currentTimeMillis()
                             )
                             db.virtualTradeDao().updateTrade(updatedTrade)
+                            SupabaseSyncManager.publishTrade(updatedTrade)
                             addLog("📉 STOP LOSS HIT on ${trade.ticker} at ₹${String.format("%.2f", currentPrice)} (₹${String.format("%.2f", netProfitAmt)} INR net after ₹${String.format("%.2f", mcxFees)} MCX brokerage & charges)")
                         } else {
                             db.virtualTradeDao().updateTrade(updatedTrade)
+                            SupabaseSyncManager.publishTrade(updatedTrade)
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Failed to update price for ${trade.ticker}: ${e.localizedMessage}")
@@ -589,6 +595,7 @@ object MarketEngine {
                                 stopLoss = stopLossPrice
                             )
                             db.virtualTradeDao().updateTrade(averagedTrade)
+                            SupabaseSyncManager.publishTrade(averagedTrade)
                             addLog("🔄 Averaged Out Position: $optimalTicker at ₹${String.format("%.2f", candidate.price)} | New Avg Entry: ₹${String.format("%.2f", avgEntry)} (Total Allocated: ₹${String.format("%,.0f", newAlloc)})")
                         } else if (currentActive.size < MAX_CONCURRENT_TRADES && (currentActive.sumOf { it.allocatedAmount } + ALLOCATION_PER_TRADE) <= TOTAL_INVESTED_CAPITAL) {
                             val targetPrice = if (isBtstTrade) candidate.price * 1.010 else if (isPutOptionTrade) candidate.price * 0.920 else if (isOptionTrade) candidate.price * 1.080 else candidate.price * 1.035
@@ -611,7 +618,9 @@ object MarketEngine {
                                 allocatedAmount = ALLOCATION_PER_TRADE,
                                 isBtst = isBtstTrade
                             )
-                            db.virtualTradeDao().insertTrade(trade)
+                            val insertedId = db.virtualTradeDao().insertTrade(trade)
+                            val tradeWithId = trade.copy(id = insertedId.toInt())
+                            SupabaseSyncManager.publishTrade(tradeWithId)
                             addLog("🚀 Auto-Trade Executed$lotLabel: $instrumentLabel for $optimalTicker (Score: ${candidate.score}) at ₹${String.format("%.2f", candidate.price)}")
                         }
                     }

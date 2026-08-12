@@ -58,6 +58,8 @@ class MyApplication : Application() {
 
         try {
             createNotificationChannel()
+            SupabaseSyncManager.initialize(this)
+            SupabaseSyncManager.startPeriodicSync()
             WorkerUtils.schedulePriceAlertWorker(this)
             WorkerUtils.scheduleDividendWorker(this)
             WorkerUtils.scheduleMarketScannerEngineWorker(this)

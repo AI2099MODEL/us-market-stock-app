@@ -94,6 +94,11 @@ fun AutoTraderTabContent(modifier: Modifier = Modifier) {
             .padding(horizontal = 14.dp, vertical = 6.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // Cloud Sync Status Card (Supabase PostgreSQL)
+        item {
+            SupabaseCloudSyncCard()
+        }
+
         // Dhan WebSocket Connection Debugger
         item {
             DhanWebSocketDebugCard()
@@ -1432,6 +1437,73 @@ fun CalendarPerformanceView(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun SupabaseCloudSyncCard() {
+    val isConnected by SupabaseSyncManager.isCloudConnected.collectAsState()
+    val statusMsg by SupabaseSyncManager.cloudStatusMessage.collectAsState()
+    val lastSync by SupabaseSyncManager.lastSyncTimestamp.collectAsState()
+    val scope = rememberCoroutineScope()
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = if (isConnected) Color(0xFFF0FDF4) else Color(0xFFFFFBEB)),
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(1.dp, if (isConnected) Color(0xFFBBF7D0) else Color(0xFFFDE68A))
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp).fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(if (isConnected) Color(0xFF16A34A) else Color(0xFFD97706))
+                )
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Cloud Sync (Supabase PostgreSQL)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Surface(
+                            color = if (isConnected) Color(0xFFDCFCE7) else Color(0xFFFEF3C7),
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(
+                                text = if (isConnected) "ONLINE" else "LOCAL ONLY",
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = if (isConnected) Color(0xFF15803D) else Color(0xFFB45309)
+                            )
+                        }
+                    }
+                    Text(
+                        text = if (lastSync > 0) "$statusMsg • Last synced: ${SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(lastSync))}" else statusMsg,
+                        fontSize = 10.sp,
+                        color = Color(0xFF64748B)
+                    )
+                }
+            }
+            IconButton(
+                onClick = {
+                    scope.launch(Dispatchers.IO) {
+                        SupabaseSyncManager.syncTradesWithCloud()
+                    }
+                },
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(Icons.Default.Sync, contentDescription = "Force Sync", tint = Color(0xFF0284C7), modifier = Modifier.size(18.dp))
             }
         }
     }
