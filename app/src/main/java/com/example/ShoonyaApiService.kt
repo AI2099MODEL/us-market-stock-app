@@ -20,12 +20,66 @@ object ShoonyaApiService {
     var sessionToken: String? = null
         private set
         
+    private fun decodeBase32(base32: String): ByteArray {
+        val alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+        var buffer = 0
+        var bitsLeft = 0
+        var count = 0
+        for (c in base32) {
+            if (c == ' ' || c == '=') continue
+            buffer = buffer shl 5 or alphabet.indexOf(c.uppercaseChar())
+            bitsLeft += 5
+            if (bitsLeft >= 8) {
+                count++
+                bitsLeft -= 8
+            }
+        }
+        val result = ByteArray(count)
+        buffer = 0
+        bitsLeft = 0
+        var index = 0
+        for (c in base32) {
+            if (c == ' ' || c == '=') continue
+            buffer = buffer shl 5 or alphabet.indexOf(c.uppercaseChar())
+            bitsLeft += 5
+            if (bitsLeft >= 8) {
+                bitsLeft -= 8
+                result[index++] = (buffer shr bitsLeft).toByte()
+            }
+        }
+        return result
+    }
+
+    private fun generateTOTP(secret: String): String {
+        if (secret.isBlank() || secret.contains("MY_SHOONYA")) return "123456"
+        return try {
+            val key = decodeBase32(secret)
+            val timeIndex = System.currentTimeMillis() / 1000 / 30
+            val data = java.nio.ByteBuffer.allocate(8).putLong(timeIndex).array()
+            val mac = javax.crypto.Mac.getInstance("HmacSHA1")
+            mac.init(javax.crypto.spec.SecretKeySpec(key, "RAW"))
+            val hash = mac.doFinal(data)
+            val offset = hash[hash.size - 1].toInt() and 0xF
+            var truncatedHash = 0
+            for (i in 0..3) {
+                truncatedHash = truncatedHash shl 8 or (hash[offset + i].toInt() and 0xFF)
+            }
+            truncatedHash = truncatedHash and 0x7FFFFFFF
+            val pinValue = truncatedHash % 1000000
+            String.format("%06d", pinValue)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            "123456"
+        }
+    }
+        
     suspend fun login(): Boolean = withContext(Dispatchers.IO) {
         val uid = try { BuildConfig.SHOONYA_USER_ID } catch (e: Exception) { "" }
         val pwd = try { BuildConfig.SHOONYA_PASSWORD } catch (e: Exception) { "" }
         val vendorCode = try { BuildConfig.SHOONYA_VENDOR_CODE } catch (e: Exception) { "" }
         val apiKey = try { BuildConfig.SHOONYA_API_KEY } catch (e: Exception) { "" }
         val imei = try { BuildConfig.SHOONYA_IMEI } catch (e: Exception) { "12345" }
+        val totpSecret = try { BuildConfig.SHOONYA_TOTP_SECRET } catch (e: Exception) { "" }
         
         if (uid.isBlank() || uid == "MY_SHOONYA_USER_ID") return@withContext false
         
@@ -38,7 +92,7 @@ object ShoonyaApiService {
                 put("apkversion", "1.0.0")
                 put("uid", uid)
                 put("pwd", MessageDigest.getInstance("SHA-256").digest(pwd.toByteArray()).joinToString("") { "%02x".format(it) })
-                put("factor2", "123456") // In production, requires real TOTP generated from secret
+                put("factor2", generateTOTP(totpSecret))
                 put("vc", vendorCode)
                 put("appkey", appKeyHash)
                 put("imei", imei)
