@@ -15,6 +15,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -66,14 +68,14 @@ fun cleanStockSymbol(input: String): String {
 }
 
 data class UpcomingDividend(
-    val symbol: String,
-    val companyName: String,
-    val amountPerShare: Double,
-    val dividendType: String, // Interim, Final, Special
-    val exDate: String, // "YYYY-MM-DD"
-    val recordDate: String, // "YYYY-MM-DD"
-    val cmp: Double,
-    val yieldPercent: Double
+    val symbol: String = "",
+    val companyName: String = "",
+    val amountPerShare: Double = 0.0,
+    val dividendType: String = "Interim Dividend", // Interim, Final, Special
+    val exDate: String = "", // "YYYY-MM-DD"
+    val recordDate: String = "", // "YYYY-MM-DD"
+    val cmp: Double = 0.0,
+    val yieldPercent: Double = 0.0
 )
 
 val STOCK_DOMAIN_MAP = mapOf(
@@ -545,29 +547,30 @@ fun DividendsScreen(
     }
 
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(14.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         // Header & Live Sync Controls
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            shape = RoundedCornerShape(10.dp),
+            shape = RoundedCornerShape(12.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
             border = BorderStroke(1.dp, Color(0xFFE2E8F0))
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(12.dp),
+                    .padding(14.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Box(
                             modifier = Modifier
@@ -577,15 +580,15 @@ fun DividendsScreen(
                         )
                         Text(
                             text = "Indian Corporate Dividends (NSE / BSE)",
-                            fontSize = 12.sp,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF1E293B)
                         )
                     }
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = if (lastSync > 0) "$statusMsg • ${SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(lastSync))}" else statusMsg,
-                        fontSize = 10.sp,
+                        fontSize = 11.sp,
                         color = Color(0xFF64748B)
                     )
                 }
@@ -597,7 +600,7 @@ fun DividendsScreen(
                         }
                     },
                     enabled = !isLoading,
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(38.dp)
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(
@@ -610,22 +613,22 @@ fun DividendsScreen(
                             imageVector = Icons.Default.Payments,
                             contentDescription = "Sync Internet Dividends",
                             tint = Color(0xFF7C3AED),
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Search Bar
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Search Indian stock or ticker...", fontSize = 12.sp, color = Color(0xFF94A3B8)) },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search", tint = Color(0xFF64748B), modifier = Modifier.size(18.dp)) },
+            placeholder = { Text("Search Indian stock or ticker...", fontSize = 13.sp, color = Color(0xFF94A3B8)) },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search", tint = Color(0xFF64748B), modifier = Modifier.size(20.dp)) },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
                     IconButton(onClick = { searchQuery = "" }) {
@@ -634,7 +637,7 @@ fun DividendsScreen(
                 }
             },
             singleLine = true,
-            shape = RoundedCornerShape(8.dp),
+            shape = RoundedCornerShape(10.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 unfocusedBorderColor = Color(0xFFE2E8F0),
                 focusedBorderColor = Color(0xFF7C3AED),
@@ -643,26 +646,26 @@ fun DividendsScreen(
             )
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        // Filter Chips Row
-        Row(
+        // Filter Chips Row (Scrollable)
+        val filters = listOf(
+            "ALL" to "All Announced (${liveDividends.size})",
+            "HIGH_YIELD" to "High Yield (>2%)",
+            "PSU" to "PSUs & Energy",
+            "IT" to "IT Majors"
+        )
+
+        LazyRow(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            val filters = listOf(
-                "ALL" to "All Announced (${liveDividends.size})",
-                "HIGH_YIELD" to "High Yield (>2%)",
-                "PSU" to "PSUs & Energy",
-                "IT" to "IT Majors"
-            )
-
-            filters.forEach { (key, label) ->
+            items(filters) { (key, label) ->
                 val isSelected = selectedFilter == key
                 FilterChip(
                     selected = isSelected,
                     onClick = { selectedFilter = key },
-                    label = { Text(label, fontSize = 11.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
+                    label = { Text(label, fontSize = 11.5.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = Color(0xFFEDE9FE),
                         selectedLabelColor = Color(0xFF6D28D9),
@@ -679,32 +682,33 @@ fun DividendsScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         if (validUpcomingDividends.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(20.dp),
+                    .padding(24.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Icon(
                         imageVector = Icons.Default.CalendarMonth,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(48.dp)
+                        modifier = Modifier.size(52.dp)
                     )
                     Text(
                         text = "No Upcoming Dividends Found",
-                        fontSize = 15.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     Text(
-                        text = "Try adjusting your search query.",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = "Try adjusting your search query or tap Refresh to check internet feeds.",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
                     )
                 }
             }
@@ -712,9 +716,9 @@ fun DividendsScreen(
             LazyVerticalGrid(
                 columns = GridCells.Fixed(1),
                 modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(bottom = 24.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(bottom = 28.dp)
             ) {
                 items(validUpcomingDividends, key = { it.symbol }) { item ->
                     DividendCard(item = item, onSymbolClick = { onSymbolSelected(item.symbol) })
@@ -784,7 +788,7 @@ fun DividendCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onSymbolClick() },
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp),
         border = BorderStroke(1.dp, Color(0xFFE2E8F0))
@@ -792,8 +796,8 @@ fun DividendCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             // Row 1: Dividend Type Badge Tag + Heart Icon
             Row(
@@ -801,24 +805,30 @@ fun DividendCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = item.dividendType.ifBlank { "DIVIDEND" }.uppercase(),
-                    color = Color.Black,
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.2.sp,
-                    maxLines = 1
-                )
+                Surface(
+                    color = Color(0xFFF1F5F9),
+                    shape = RoundedCornerShape(6.dp)
+                ) {
+                    Text(
+                        text = item.dividendType.ifBlank { "DIVIDEND" }.uppercase(),
+                        color = Color(0xFF334155),
+                        fontSize = 9.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.3.sp,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                        maxLines = 1
+                    )
+                }
 
                 IconButton(
                     onClick = { isFavorite = !isFavorite },
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(22.dp)
                 ) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = "Bookmark",
-                        tint = if (isFavorite) Color(0xFFDC2626) else Color(0xFF64748B),
-                        modifier = Modifier.size(14.dp)
+                        tint = if (isFavorite) Color(0xFFDC2626) else Color(0xFF94A3B8),
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
@@ -831,23 +841,24 @@ fun DividendCard(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.weight(1f, fill = false)
                 ) {
-                    CompanyLogoView(symbol = item.symbol, modifier = Modifier.size(24.dp))
+                    CompanyLogoView(symbol = item.symbol, modifier = Modifier.size(32.dp))
 
                     Column {
                         Text(
                             text = item.companyName,
-                            fontSize = 14.sp,
+                            fontSize = 14.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF0F172A),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = displaySymbol,
-                            fontSize = 11.sp,
+                            fontSize = 11.5.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFF64748B),
                             maxLines = 1
@@ -857,9 +868,9 @@ fun DividendCard(
 
                 Text(
                     text = "Yield: ${String.format(Locale.US, "%.2f", item.yieldPercent)}%",
-                    fontSize = 10.5.sp,
+                    fontSize = 11.sp,
                     color = Color(0xFF64748B),
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.SemiBold
                 )
             }
 
@@ -871,21 +882,21 @@ fun DividendCard(
             ) {
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
+                        .clip(RoundedCornerShape(6.dp))
                         .background(Color(0xFFF8F9FA))
-                        .padding(horizontal = 6.dp, vertical = 3.dp)
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = "Payout: ",
                             color = Color(0xFF64748B),
-                            fontSize = 11.sp,
+                            fontSize = 11.5.sp,
                             fontWeight = FontWeight.Normal
                         )
                         Text(
                             text = "₹$formattedPayout",
                             color = Color(0xFF1F2937),
-                            fontSize = 13.5.sp,
+                            fontSize = 14.sp,
                             fontWeight = FontWeight.Black
                         )
                     }
@@ -893,7 +904,7 @@ fun DividendCard(
 
                 Text(
                     text = formattedPrice,
-                    fontSize = 12.5.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF10B981),
                     maxLines = 1
@@ -906,9 +917,9 @@ fun DividendCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(4.dp))
+                    .clip(RoundedCornerShape(6.dp))
                     .background(Color(0xFFFFF0F1))
-                    .padding(vertical = 4.dp, horizontal = 8.dp)
+                    .padding(vertical = 6.dp, horizontal = 10.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -917,14 +928,14 @@ fun DividendCard(
                 ) {
                     Text(
                         text = "EX-DATE",
-                        fontSize = 8.5.sp,
+                        fontSize = 9.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color(0xFFDC2626),
-                        letterSpacing = 0.2.sp
+                        letterSpacing = 0.3.sp
                     )
                     Text(
                         text = formatDividendDate(item.exDate),
-                        fontSize = 9.sp,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFFDC2626),
                         textAlign = TextAlign.End
@@ -937,9 +948,9 @@ fun DividendCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(4.dp))
+                    .clip(RoundedCornerShape(6.dp))
                     .background(Color(0xFFECFDF5))
-                    .padding(vertical = 4.dp, horizontal = 8.dp)
+                    .padding(vertical = 6.dp, horizontal = 10.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -948,14 +959,14 @@ fun DividendCard(
                 ) {
                     Text(
                         text = "PAYOUT DATE",
-                        fontSize = 8.5.sp,
+                        fontSize = 9.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color(0xFF059669),
-                        letterSpacing = 0.2.sp
+                        letterSpacing = 0.3.sp
                     )
                     Text(
                         text = formatDividendDate(payoutDateStr),
-                        fontSize = 9.sp,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF059669),
                         textAlign = TextAlign.End

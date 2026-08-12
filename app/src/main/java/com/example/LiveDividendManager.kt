@@ -94,7 +94,14 @@ object LiveDividendManager {
             val rawText = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text.orEmpty()
 
             val cleanJson = rawText.replace("```json", "").replace("```", "").trim()
-            val parsed = adapter.fromJson(cleanJson)
+            var parsed: List<UpcomingDividend>? = null
+            try {
+                parsed = adapter.fromJson(cleanJson)
+            } catch (e: Exception) {
+                Log.w(TAG, "Moshi parse failed, using robust JSONArray parser", e)
+                parsed = parseDividendsJson(cleanJson)
+            }
+
             if (!parsed.isNullOrEmpty()) {
                 fetchedList = parsed
                 Log.d(TAG, "Successfully fetched ${parsed.size} dividends via Gemini Live Grounding")
@@ -138,6 +145,41 @@ object LiveDividendManager {
         }
 
         isLoading.value = false
+    }
+
+    private fun parseDividendsJson(rawJson: String): List<UpcomingDividend> {
+        val result = mutableListOf<UpcomingDividend>()
+        try {
+            val array = org.json.JSONArray(rawJson)
+            for (i in 0 until array.length()) {
+                val obj = array.optJSONObject(i) ?: continue
+                val symbol = obj.optString("symbol").ifBlank { obj.optString("ticker") }
+                if (symbol.isBlank()) continue
+                val companyName = obj.optString("companyName").ifBlank { obj.optString("name", symbol) }
+                val amountPerShare = obj.optDouble("amountPerShare", obj.optDouble("amount", 0.0))
+                val dividendType = obj.optString("dividendType").ifBlank { obj.optString("type", "Interim Dividend") }
+                val exDate = obj.optString("exDate").ifBlank { obj.optString("ex_date", "") }
+                val recordDate = obj.optString("recordDate").ifBlank { obj.optString("record_date", "") }
+                val cmp = obj.optDouble("cmp", obj.optDouble("price", 0.0))
+                val yieldPercent = obj.optDouble("yieldPercent", obj.optDouble("yield", 0.0))
+
+                result.add(
+                    UpcomingDividend(
+                        symbol = symbol,
+                        companyName = companyName,
+                        amountPerShare = amountPerShare,
+                        dividendType = dividendType,
+                        exDate = exDate,
+                        recordDate = recordDate,
+                        cmp = cmp,
+                        yieldPercent = yieldPercent
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "JSONArray parsing error", e)
+        }
+        return result
     }
 
     private fun getDefaultIndianDividends(): List<UpcomingDividend> {
