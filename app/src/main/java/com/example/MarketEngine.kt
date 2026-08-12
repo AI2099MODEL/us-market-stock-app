@@ -240,6 +240,7 @@ object MarketEngine {
                         profitAmount = netProfitAmt
                     )
                     db.virtualTradeDao().updateTrade(squared)
+                    SupabaseSyncManager.publishTrade(squared)
                     addLog("⏰ Commodity Market Closed Protocol: Auto squared off Option on ${optionTrade.ticker} at ₹${String.format("%.2f", exitPrice)} (Net P&L: ₹${String.format("%.2f", netProfitAmt)}) to eliminate overnight decay.")
                 }
             }
@@ -430,6 +431,7 @@ object MarketEngine {
                             profitAmount = profitAmt
                         )
                         db.virtualTradeDao().updateTrade(squared)
+                        SupabaseSyncManager.publishTrade(squared)
                         addLog("⏹️ $actionLabel ${trade.ticker} at ₹${String.format("%.2f", trade.currentPrice)} (+${String.format("%.2f", profitAmt)} INR)")
                     }
                 }
@@ -782,6 +784,7 @@ object MarketEngine {
                     profitAmount = netProfitAmt
                 )
                 db.virtualTradeDao().updateTrade(squared)
+                SupabaseSyncManager.publishTrade(squared)
                 addLog("⏹️ Manually Squared Off ${trade.ticker} at ₹${String.format("%.2f", trade.currentPrice)} (Net P&L: ₹${String.format("%.2f", netProfitAmt)} INR after ₹${String.format("%.2f", brokerageDetails.totalCharges)} Dhan fees)")
             }
             logDailyProfit(db)
@@ -805,6 +808,7 @@ object MarketEngine {
                 profitAmount = netProfitAmt
             )
             db.virtualTradeDao().updateTrade(updated)
+            SupabaseSyncManager.publishTrade(updated)
             addLog("⏹️ Manually Squared Off ${trade.ticker} at ₹${String.format("%.2f", trade.currentPrice)} (Net P&L: ₹${String.format("%.2f", netProfitAmt)} INR after ₹${String.format("%.2f", brokerageDetails.totalCharges)} Dhan fees)")
             logDailyProfit(db)
         }

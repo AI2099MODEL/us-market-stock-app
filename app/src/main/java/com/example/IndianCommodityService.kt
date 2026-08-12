@@ -302,8 +302,14 @@ object IndianCommodityRepository {
             val usdInrRate = 84.0
 
             val inrPrice = when (baseSymbol) {
-                "GOLD" -> if (rawPrice > 0) (rawPrice / 31.1035) * 10.0 * usdInrRate else 74500.0
-                "SILVER" -> if (rawPrice > 0) (rawPrice / 31.1035) * 1000.0 * usdInrRate else 89500.0
+                "GOLD" -> {
+                    val adjRaw = if (rawPrice > 3500.0) rawPrice / 1.8 else rawPrice
+                    if (adjRaw > 0) (adjRaw / 31.1035) * 10.0 * usdInrRate else 74500.0
+                }
+                "SILVER" -> {
+                    val adjRaw = if (rawPrice > 50.0) rawPrice / 2.0 else rawPrice
+                    if (adjRaw > 0) (adjRaw / 31.1035) * 1000.0 * usdInrRate else 89500.0
+                }
                 "CRUDEOIL" -> if (rawPrice > 0) rawPrice * usdInrRate else 6350.0
                 "NATURALGAS" -> if (rawPrice > 0) rawPrice * usdInrRate else 235.0
                 "COPPER" -> if (rawPrice > 0) rawPrice * 2.20462 * usdInrRate else 810.0
@@ -314,8 +320,14 @@ object IndianCommodityRepository {
 
             val prevCloseRaw = meta?.effectivePreviousClose ?: meta?.chartPreviousClose ?: meta?.regularMarketPreviousClose ?: rawPrice
             val prevCloseInr = when (baseSymbol) {
-                "GOLD" -> if (prevCloseRaw > 0) (prevCloseRaw / 31.1035) * 10.0 * usdInrRate else 74000.0
-                "SILVER" -> if (prevCloseRaw > 0) (prevCloseRaw / 31.1035) * 1000.0 * usdInrRate else 89000.0
+                "GOLD" -> {
+                    val adjRaw = if (prevCloseRaw > 3500.0) prevCloseRaw / 1.8 else prevCloseRaw
+                    if (adjRaw > 0) (adjRaw / 31.1035) * 10.0 * usdInrRate else 74000.0
+                }
+                "SILVER" -> {
+                    val adjRaw = if (prevCloseRaw > 50.0) prevCloseRaw / 2.0 else prevCloseRaw
+                    if (adjRaw > 0) (adjRaw / 31.1035) * 1000.0 * usdInrRate else 89000.0
+                }
                 "CRUDEOIL" -> if (prevCloseRaw > 0) prevCloseRaw * usdInrRate else 6300.0
                 "NATURALGAS" -> if (prevCloseRaw > 0) prevCloseRaw * usdInrRate else 230.0
                 "COPPER" -> if (prevCloseRaw > 0) prevCloseRaw * 2.20462 * usdInrRate else 800.0
@@ -336,16 +348,28 @@ object IndianCommodityRepository {
             val lowRaw = if (lows.isNotEmpty()) lows.minOrNull() ?: rawPrice else rawPrice
 
             val high = when (baseSymbol) {
-                "GOLD" -> (highRaw / 31.1035) * 10.0 * usdInrRate
-                "SILVER" -> (highRaw / 31.1035) * 1000.0 * usdInrRate
+                "GOLD" -> {
+                    val adjRaw = if (highRaw > 3500.0) highRaw / 1.8 else highRaw
+                    (adjRaw / 31.1035) * 10.0 * usdInrRate
+                }
+                "SILVER" -> {
+                    val adjRaw = if (highRaw > 50.0) highRaw / 2.0 else highRaw
+                    (adjRaw / 31.1035) * 1000.0 * usdInrRate
+                }
                 "CRUDEOIL", "NATURALGAS" -> highRaw * usdInrRate
                 "COPPER" -> highRaw * 2.20462 * usdInrRate
                 else -> (highRaw / 1000.0) * usdInrRate
             }
 
             val low = when (baseSymbol) {
-                "GOLD" -> (lowRaw / 31.1035) * 10.0 * usdInrRate
-                "SILVER" -> (lowRaw / 31.1035) * 1000.0 * usdInrRate
+                "GOLD" -> {
+                    val adjRaw = if (lowRaw > 3500.0) lowRaw / 1.8 else lowRaw
+                    (adjRaw / 31.1035) * 10.0 * usdInrRate
+                }
+                "SILVER" -> {
+                    val adjRaw = if (lowRaw > 50.0) lowRaw / 2.0 else lowRaw
+                    (adjRaw / 31.1035) * 1000.0 * usdInrRate
+                }
                 "CRUDEOIL", "NATURALGAS" -> lowRaw * usdInrRate
                 "COPPER" -> lowRaw * 2.20462 * usdInrRate
                 else -> (lowRaw / 1000.0) * usdInrRate
