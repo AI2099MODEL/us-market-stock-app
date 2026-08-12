@@ -58,7 +58,9 @@ data class PortfolioHolding(
     val buyPrice: Double,
     val purchaseDate: String,
     val broker: String,
-    val notes: String = ""
+    val notes: String = "",
+    val currentPrice: Double = 0.0,
+    val previousClose: Double = 0.0
 )
 
 data class HoldingPriceData(
@@ -210,8 +212,10 @@ object PortfolioStorage {
                         quantity = obj.optDouble("quantity", 0.0),
                         buyPrice = obj.optDouble("buyPrice", 0.0),
                         purchaseDate = obj.optString("purchaseDate", ""),
-                        broker = obj.optString("broker", "Robinhood"),
-                        notes = obj.optString("notes", "")
+                        broker = obj.optString("broker", "Dhan"),
+                        notes = obj.optString("notes", ""),
+                        currentPrice = obj.optDouble("currentPrice", 0.0),
+                        previousClose = obj.optDouble("previousClose", 0.0)
                     )
                 )
             }
@@ -234,6 +238,8 @@ object PortfolioStorage {
                 put("purchaseDate", h.purchaseDate)
                 put("broker", h.broker)
                 put("notes", h.notes)
+                put("currentPrice", h.currentPrice)
+                put("previousClose", h.previousClose)
             }
             jsonArray.put(obj)
         }
@@ -277,6 +283,26 @@ fun PortfolioAnalysisView(modifier: Modifier = Modifier) {
         PortfolioStorage.saveHoldings(context, newList)
     }
 
+    // Immediately populate priceMap from synced holdings if currentPrice exists
+    LaunchedEffect(holdings) {
+        if (holdings.isEmpty()) return@LaunchedEffect
+        val updatedMap = priceMap.toMutableMap()
+        var changed = false
+        holdings.forEach { h ->
+            if (h.currentPrice > 0.0 && (!updatedMap.containsKey(h.symbol) || updatedMap[h.symbol]?.price == 0.0)) {
+                updatedMap[h.symbol] = HoldingPriceData(
+                    price = h.currentPrice,
+                    previousClose = if (h.previousClose > 0.0) h.previousClose else h.buyPrice,
+                    lastUpdatedMs = System.currentTimeMillis()
+                )
+                changed = true
+            }
+        }
+        if (changed) {
+            priceMap = updatedMap
+        }
+    }
+
     // Batch Live Price Fetching with rate limit safety & exponential retry
     LaunchedEffect(holdings, isAutoRefreshPaused) {
         if (holdings.isEmpty()) return@LaunchedEffect
@@ -289,16 +315,35 @@ fun PortfolioAnalysisView(modifier: Modifier = Modifier) {
                 withContext(Dispatchers.IO) {
                     tickers.forEach { ticker ->
                         try {
-                            // First check Dhan live websocket feed for zero latency tick
+                            val cleanTicker = ticker.replace("-EQ", "").uppercase().trim()
+
+                            // 1. First check Dhan live websocket feed for zero latency tick
                             val liveWsQuote = DhanWebSocketManager.liveQuotes.value[ticker]
+                                ?: DhanWebSocketManager.liveQuotes.value[cleanTicker]
+
                             if (liveWsQuote != null && liveWsQuote.price > 0.0) {
                                 newMap[ticker] = HoldingPriceData(
                                     price = liveWsQuote.price,
-                                    previousClose = liveWsQuote.price - liveWsQuote.change,
+                                    previousClose = if (liveWsQuote.price - liveWsQuote.change > 0) liveWsQuote.price - liveWsQuote.change else liveWsQuote.price,
                                     lastUpdatedMs = System.currentTimeMillis()
                                 )
                             } else {
-                                val res = YahooRetrofit.service.getChart(ticker, "1d", "1m")
+                                // 2. Check Yahoo Finance with proper symbol formatting (NSE stocks need .NS suffix)
+                                val yahooTicker = when {
+                                    ticker.contains(".") || ticker.contains("=") -> ticker
+                                    cleanTicker in listOf("GOLDM", "GOLD", "CRUDEOIL", "CRUDEOILM", "SILVERM", "SILVER", "NATURALGAS", "NGM") -> {
+                                        when(cleanTicker) {
+                                            "GOLDM", "GOLD" -> "GC=F"
+                                            "CRUDEOIL", "CRUDEOILM" -> "CL=F"
+                                            "SILVERM", "SILVER" -> "SI=F"
+                                            "NATURALGAS", "NGM" -> "NG=F"
+                                            else -> "$cleanTicker.NS"
+                                        }
+                                    }
+                                    else -> "$cleanTicker.NS"
+                                }
+
+                                val res = YahooRetrofit.service.getChart(yahooTicker, "1d", "1m")
                                 val chartResult = res.chart?.result?.firstOrNull()
                                 val meta = chartResult?.meta
                                 val livePrice = meta?.regularMarketPrice ?: 0.0
@@ -329,7 +374,9 @@ fun PortfolioAnalysisView(modifier: Modifier = Modifier) {
 
     val totalCurrentValue = remember(holdings, priceMap) {
         holdings.sumOf { h ->
-            val p = priceMap[h.symbol]?.price?.takeIf { it > 0.0 } ?: h.buyPrice
+            val p = priceMap[h.symbol]?.price?.takeIf { it > 0.0 }
+                ?: h.currentPrice.takeIf { it > 0.0 }
+                ?: h.buyPrice
             h.quantity * p
         }
     }
@@ -859,7 +906,7 @@ fun HoldingGridCard(
     onDelete: () -> Unit
 ) {
     val displaySymbol = holding.symbol
-    val currentPrice = liveData?.price?.takeIf { it > 0.0 } ?: holding.buyPrice
+    val currentPrice = liveData?.price?.takeIf { it > 0.0 } ?: holding.currentPrice.takeIf { it > 0.0 } ?: holding.buyPrice
     val investedVal = holding.quantity * holding.buyPrice
     val currentVal = holding.quantity * currentPrice
     val pnlAmount = currentVal - investedVal
@@ -952,7 +999,7 @@ fun HoldingGridCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${holding.quantity.toInt()} × ₹${String.format(Locale.US, "%.0f", holding.buyPrice)}",
+                    text = "${if (holding.quantity % 1.0 == 0.0) holding.quantity.toInt().toString() else String.format(Locale.US, "%.2f", holding.quantity)} × ₹${String.format(Locale.US, "%,.2f", holding.buyPrice)}",
                     fontSize = 10.sp,
                     color = Color(0xFF64748B)
                 )

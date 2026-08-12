@@ -178,10 +178,16 @@ object DhanPortfolioService {
 
             for (i in 0 until jsonArray.length()) {
                 val item = jsonArray.getJSONObject(i)
-                val symbol = item.optString("tradingSymbol",
+                val rawSymbol = item.optString("tradingSymbol",
                     item.optString("symbol",
                     item.optString("securityId", "")))
                 
+                val symbol = if (rawSymbol.uppercase().endsWith("-EQ")) {
+                    rawSymbol.substring(0, rawSymbol.length - 3).uppercase()
+                } else {
+                    rawSymbol.uppercase()
+                }
+
                 val qty = item.optDouble("totalQty",
                     item.optDouble("availableQty",
                     item.optDouble("dpQty",
@@ -192,12 +198,22 @@ object DhanPortfolioService {
                     item.optDouble("buyPrice",
                     item.optDouble("averagePrice", 0.0))))
 
+                val currentPrice = item.optDouble("lastTradedPrice",
+                    item.optDouble("currentPrice",
+                    item.optDouble("ltp", 0.0)))
+
+                val closePrice = item.optDouble("closePrice",
+                    item.optDouble("previousClose",
+                    item.optDouble("prevClose", 0.0)))
+
                 if (symbol.isNotBlank() && qty > 0) {
                     list.add(
                         PortfolioHolding(
-                            symbol = symbol.uppercase(),
+                            symbol = symbol,
                             quantity = qty,
-                            buyPrice = if (buyPrice > 0) buyPrice else 100.0,
+                            buyPrice = if (buyPrice > 0) buyPrice else (if (currentPrice > 0) currentPrice else 100.0),
+                            currentPrice = if (currentPrice > 0) currentPrice else buyPrice,
+                            previousClose = if (closePrice > 0) closePrice else buyPrice,
                             purchaseDate = todayStr,
                             broker = "Dhan",
                             notes = "Synced live from Dhan HQ API"
@@ -225,9 +241,15 @@ object DhanPortfolioService {
 
             for (i in 0 until jsonArray.length()) {
                 val item = jsonArray.getJSONObject(i)
-                val symbol = item.optString("tradingSymbol",
+                val rawSymbol = item.optString("tradingSymbol",
                     item.optString("symbol",
                     item.optString("securityId", "")))
+
+                val symbol = if (rawSymbol.uppercase().endsWith("-EQ")) {
+                    rawSymbol.substring(0, rawSymbol.length - 3).uppercase()
+                } else {
+                    rawSymbol.uppercase()
+                }
 
                 val netQty = item.optDouble("netQty",
                     item.optDouble("quantity",
@@ -237,14 +259,24 @@ object DhanPortfolioService {
                     item.optDouble("buyAvg",
                     item.optDouble("buyPrice", 0.0)))
 
+                val currentPrice = item.optDouble("lastTradedPrice",
+                    item.optDouble("currentPrice",
+                    item.optDouble("ltp",
+                    item.optDouble("drvPrice", 0.0))))
+
+                val closePrice = item.optDouble("closePrice",
+                    item.optDouble("previousClose", 0.0))
+
                 val qty = if (netQty < 0) -netQty else netQty
 
                 if (symbol.isNotBlank() && qty > 0) {
                     list.add(
                         PortfolioHolding(
-                            symbol = symbol.uppercase(),
+                            symbol = symbol,
                             quantity = qty,
-                            buyPrice = if (buyPrice > 0) buyPrice else 100.0,
+                            buyPrice = if (buyPrice > 0) buyPrice else (if (currentPrice > 0) currentPrice else 100.0),
+                            currentPrice = if (currentPrice > 0) currentPrice else buyPrice,
+                            previousClose = if (closePrice > 0) closePrice else buyPrice,
                             purchaseDate = todayStr,
                             broker = "Dhan",
                             notes = "Active Dhan HQ position"
@@ -264,6 +296,8 @@ object DhanPortfolioService {
                 symbol = "GOLDM",
                 quantity = 1.0,
                 buyPrice = 71250.0,
+                currentPrice = 72480.0,
+                previousClose = 71800.0,
                 purchaseDate = todayStr,
                 broker = "Dhan",
                 notes = "MCX Gold Mini Contract (Dhan HQ)"
@@ -272,6 +306,8 @@ object DhanPortfolioService {
                 symbol = "CRUDEOIL",
                 quantity = 100.0,
                 buyPrice = 6480.0,
+                currentPrice = 6545.0,
+                previousClose = 6500.0,
                 purchaseDate = todayStr,
                 broker = "Dhan",
                 notes = "MCX Crude Oil Futures (Dhan HQ)"
@@ -280,6 +316,8 @@ object DhanPortfolioService {
                 symbol = "SILVERM",
                 quantity = 5.0,
                 buyPrice = 83400.0,
+                currentPrice = 84200.0,
+                previousClose = 83800.0,
                 purchaseDate = todayStr,
                 broker = "Dhan",
                 notes = "MCX Silver Mini Contract (Dhan HQ)"
@@ -288,6 +326,8 @@ object DhanPortfolioService {
                 symbol = "RELIANCE",
                 quantity = 25.0,
                 buyPrice = 2940.0,
+                currentPrice = 2985.0,
+                previousClose = 2950.0,
                 purchaseDate = todayStr,
                 broker = "Dhan",
                 notes = "NSE Equity Holding (Dhan HQ)"
@@ -296,6 +336,8 @@ object DhanPortfolioService {
                 symbol = "NATURALGAS",
                 quantity = 1250.0,
                 buyPrice = 215.50,
+                currentPrice = 219.80,
+                previousClose = 216.00,
                 purchaseDate = todayStr,
                 broker = "Dhan",
                 notes = "MCX Natural Gas Futures (Dhan HQ)"
