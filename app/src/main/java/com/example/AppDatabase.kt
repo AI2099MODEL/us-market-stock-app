@@ -30,6 +30,7 @@ data class ScannedBreakout(
     val change: Double,
     val changePercent: Double,
     val isBtst: Boolean,
+    val assetType: String = "COMMODITY",
     val scannedAt: Long = System.currentTimeMillis()
 )
 

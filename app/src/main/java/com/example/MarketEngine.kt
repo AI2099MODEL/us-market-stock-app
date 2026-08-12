@@ -165,7 +165,7 @@ object MarketEngine {
 
         val isWeekday = dayOfWeek != Calendar.SATURDAY && dayOfWeek != Calendar.SUNDAY
         val isHoliday = MarketUtils.isMarketHoliday(cal)
-        val isMarketHours = isSimulationMode.value || (isWeekday && !isHoliday && (timeInMinutes in 600..1410)) // 10:00 AM - 11:30 PM IST
+        val isMarketHours = isSimulationMode.value || (isWeekday && !isHoliday && (timeInMinutes in 555..1410)) // 9:15 AM - 11:30 PM IST (Market & Options Open at 9:15 AM IST)
 
         // Market Close Prep Windows: Last 45 mins (10:45 PM - 11:30 PM) & Last 5 mins (11:25 PM - 11:30 PM)
         val isLast45Mins = (timeInMinutes in 1365..1410)
@@ -510,22 +510,14 @@ object MarketEngine {
 
                 addLog("🌐 MCX Commodity Market Sentiment (Dhan API): $sentimentTag")
 
-                // 2. Fetch Indian commodity tickers for high quality candidates (score >= 75)
-                val scanTickers = StockScanner.COMMODITY_SCAN_TICKERS
-                val breakoutCandidates = mutableListOf<ScanResult>()
-
-                scanTickers.map { ticker ->
-                    async {
-                        val res = StockScanner.analyzeStock(ticker, "Breakouts", requireBullish = false)
-                        if (res != null && res.score >= 75) {
-                            breakoutCandidates.add(res)
-                        }
-                    }
-                }.awaitAll()
+                // 2. Fetch Index Options, Stock Options & Commodity Breakout candidates (score >= 75)
+                val breakoutCandidates = StockScanner.scanMultiple("Breakouts")
+                    .filter { it.score >= 75 }
+                    .toMutableList()
 
                 breakoutCandidates.sortByDescending { it.score }
 
-                // Save breakout candidates to the database
+                // Save breakout candidates (Indices, Stocks Options & Commodities) to database
                 if (breakoutCandidates.isNotEmpty()) {
                     val dbBreakouts = breakoutCandidates.map { candidate ->
                         ScannedBreakout(
@@ -544,12 +536,13 @@ object MarketEngine {
                             change = candidate.change,
                             changePercent = candidate.changePercent,
                             isBtst = candidate.isBtst,
+                            assetType = candidate.assetType,
                             scannedAt = System.currentTimeMillis()
                         )
                     }
                     db.scannedBreakoutDao().clearAll()
                     db.scannedBreakoutDao().insertBreakouts(dbBreakouts)
-                    addLog("Background Scanner updated ${dbBreakouts.size} high-conviction MCX commodity breakouts.")
+                    addLog("Background Scanner updated ${dbBreakouts.size} breakout signals (Indices Options, Stock Options & MCX Commodities).")
                 }
 
                 // 3. Automatically execute or average out trades when slots are available

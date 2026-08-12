@@ -1625,7 +1625,8 @@ fun ScannedBreakout.toScanResult() = ScanResult(
     openPrice = openPrice,
     change = change,
     changePercent = changePercent,
-    isBtst = isBtst
+    isBtst = isBtst,
+    assetType = assetType
 )
 
 fun ScanResult.toScannedBreakout() = ScannedBreakout(
@@ -1643,7 +1644,8 @@ fun ScanResult.toScannedBreakout() = ScannedBreakout(
     openPrice = openPrice,
     change = change,
     changePercent = changePercent,
-    isBtst = isBtst
+    isBtst = isBtst,
+    assetType = assetType
 )
 
 @Composable
@@ -1652,6 +1654,7 @@ fun DashboardScreen(modifier: Modifier = Modifier, onSymbolSelected: (String) ->
     var activeSubTab by remember { mutableStateOf("BREAKOUTS") } // "BREAKOUTS", "AUTOTRADER", or "ANALYSIS"
     var selectedStockForAnalysis by remember { mutableStateOf<String?>(null) }
     var scanResults by remember { mutableStateOf<List<ScanResult>>(emptyList()) }
+    var selectedCategoryFilter by remember { mutableStateOf("ALL") } // "ALL", "INDEX_OPTION", "STOCK_OPTION", "COMMODITY"
     var isScanning by remember { mutableStateOf(true) }
     var loadingPercent by remember { mutableIntStateOf(0) }
     var lastFetchedTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -1885,26 +1888,64 @@ fun DashboardScreen(modifier: Modifier = Modifier, onSymbolSelected: (String) ->
                     }
                 }
             } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(start = 8.dp, top = 4.dp, end = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(bottom = 24.dp)
-                ) {
-                    items(scanResults, key = { it.ticker }) { res ->
-                        StockBreakoutCard(
-                            res = res,
-                            onSymbolSelected = { ticker ->
-                                selectedStockForAnalysis = ticker
-                                activeSubTab = "ANALYSIS"
-                            }
+                val filteredResults = remember(scanResults, selectedCategoryFilter) {
+                    if (selectedCategoryFilter == "ALL") scanResults
+                    else scanResults.filter { it.assetType == selectedCategoryFilter }
+                }
+
+                Column(modifier = Modifier.fillMaxSize()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        val filters = listOf(
+                            "ALL" to "All Signals",
+                            "INDEX_OPTION" to "Index Options",
+                            "STOCK_OPTION" to "Stock Options",
+                            "COMMODITY" to "MCX Commodities"
                         )
+                        filters.forEach { (typeKey, label) ->
+                            val isSelected = selectedCategoryFilter == typeKey
+                            Surface(
+                                onClick = { selectedCategoryFilter = typeKey },
+                                shape = RoundedCornerShape(16.dp),
+                                color = if (isSelected) Color(0xFF7C3AED) else Color.White,
+                                border = BorderStroke(1.dp, if (isSelected) Color(0xFF7C3AED) else Color(0xFFCBD5E1))
+                            ) {
+                                Text(
+                                    text = label,
+                                    fontSize = 10.5.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) Color.White else Color(0xFF475569),
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                )
+                            }
+                        }
                     }
 
-
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .padding(start = 8.dp, top = 2.dp, end = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(bottom = 24.dp)
+                    ) {
+                        items(filteredResults, key = { it.ticker }) { res ->
+                            StockBreakoutCard(
+                                res = res,
+                                onSymbolSelected = { ticker ->
+                                    selectedStockForAnalysis = ticker
+                                    activeSubTab = "ANALYSIS"
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }
