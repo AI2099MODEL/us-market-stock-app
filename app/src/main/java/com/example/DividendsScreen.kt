@@ -103,26 +103,24 @@ val STOCK_DOMAIN_MAP = mapOf(
     "BAJAJFINSV" to "bajajfinserv.in",
     "BAJAJHFL" to "bajajhousingfinance.in",
     "BAJAJHLDNG" to "bajajauto.com",
-    "GOOGL" to "bajajfinserv.in",
     "BANKBARODA" to "bankofbaroda.in",
     "BANKINDIA" to "bankofindia.co.in",
     "BDL" to "bdl-india.in",
     "BEL" to "bel-india.in",
     "BHARATFORG" to "bharatforge.com",
-    "AMZN" to "airtel.in",
     "BHARTIHEXA" to "airtel.in",
     "BHEL" to "bhel.in",
     "BIOCON" to "biocon.com",
     "BLUESTARCO" to "bluestarindia.com",
     "BOSCHLTD" to "bosch.in",
-    "BPCL" to "coca-colacompany.com",
+    "BPCL" to "bharatpetroleum.in",
     "BRITANNIA" to "britannia.co.in",
     "BSE" to "bseindia.com",
     "CANBK" to "canarabank.com",
     "CGPOWER" to "cgpower.com",
     "CHOLAFIN" to "cholamandalam.com",
     "CIPLA" to "cipla.com",
-    "COALINDIA" to "bankofamerica.com",
+    "COALINDIA" to "coalindia.in",
     "COCHINSHIP" to "cochinshipyard.in",
     "COFORGE" to "coforge.com",
     "COLPAL" to "colgatepalmolive.co.in",
@@ -136,52 +134,42 @@ val STOCK_DOMAIN_MAP = mapOf(
     "DMART" to "dmart.in",
     "DRREDDY" to "drreddys.com",
     "EICHERMOT" to "eichermotors.com",
-    "ENRIN" to "enercon.de",
-    "ETERNAL" to "eternaltraining.in",
     "EXIDEIND" to "exideindustries.com",
     "FEDERALBNK" to "federalbank.co.in",
     "FORTIS" to "fortishealthcare.com",
     "GAIL" to "gailonline.com",
     "GLENMARK" to "glenmarkpharma.com",
-    "GMRAIRPORT" to "gmrgroup.in",
     "GODFRYPHLP" to "godfreyphillips.com",
     "GODREJCP" to "godrejcp.com",
     "GODREJPROP" to "godrejproperties.com",
     "GRASIM" to "grasim.com",
     "HAL" to "hal-india.co.in",
     "HAVELLS" to "havells.com",
-    "HCLTECH" to "visa.com",
-    "JPM" to "jpmorganchase.com",
-    "GS" to "goldmansachs.com",
-    "JPM" to "jpmorganchase.com",
-    "PRU" to "prudential.com",
+    "HCLTECH" to "hcltech.com",
     "HEROMOTOCO" to "heromotocorp.com",
     "HINDALCO" to "hindalco.com",
     "HINDPETRO" to "hindustanpetroleum.com",
-    "HINDUNILVR" to "jnj.com",
+    "HINDUNILVR" to "hul.co.in",
     "HINDZINC" to "hzlindia.com",
     "HUDCO" to "hudco.org",
-    "HUL" to "jnj.com",
+    "HUL" to "hul.co.in",
     "HYUNDAI" to "hyundai.com",
-    "C" to "citigroup.com",
-    "BAC" to "icicibank.com",
-    "TRV" to "travelers.com",
+    "ICICIBANK" to "icicibank.com",
     "IDEA" to "myvi.in",
     "IDFCFIRSTB" to "idfcfirstbank.com",
     "IGL" to "iglonline.net",
-    "US_BANK" to "bankofamerica.com",
     "INDHOTEL" to "ihcltata.com",
     "INDIGO" to "goindigo.in",
     "INDUSTOWER" to "industowers.com",
     "INDUSINDBK" to "indusind.com",
-    "INFOSYS" to "nvidia.com",
-    "NVDA" to "nvidia.com",
+    "INFOSYS" to "infosys.com",
+    "INFY" to "infosys.com",
     "IOC" to "iocl.com",
     "IRB" to "irb.co.in",
     "IRCTC" to "irctc.co.in",
     "IREDA" to "ireda.in",
     "IRFC" to "irfc.co.in",
-    "PG" to "pg.com",
+    "ITC" to "itcportal.com",
     "ITCHOTELS" to "itchotels.com",
     "JINDALSTEL" to "jindalsteelpower.com",
     "JIOFIN" to "jiofinancial.com",
@@ -209,9 +197,6 @@ val STOCK_DOMAIN_MAP = mapOf(
     "MAXHEALTH" to "maxhealthcare.in",
     "MAZDOCK" to "mazagondock.in",
     "MFSL" to "maxfinancialservices.com",
-    "MM" to "mahindra.com",
-    "M&MFIN" to "mahindrafinance.com",
-    "MMFIN" to "mahindrafinance.com",
     "MOTHERSON" to "motherson.com",
     "MOTILALOFS" to "motilaloswalgroup.com",
     "MPHASIS" to "mphasis.com",
@@ -222,73 +207,45 @@ val STOCK_DOMAIN_MAP = mapOf(
     "NESTLEIND" to "nestle.in",
     "NHPC" to "nhpcindia.com",
     "NMDC" to "nmdc.co.in",
-    "NTPC" to "merck.com",
-    "NTPCGREEN" to "ntpcgreen.com",
+    "NTPC" to "ntpc.co.in",
     "NYKAA" to "nykaa.com",
     "OBEROIRLTY" to "oberoirealty.com",
     "OFSS" to "oracle.com",
     "OIL" to "oil-india.com",
-    "ONGC" to "pepsico.com",
+    "ONGC" to "ongcindia.com",
     "PAGEIND" to "jockey.in",
     "PATANJALI" to "patanjaliayurved.org",
     "PAYTM" to "paytm.com",
-    "PERSESTENT" to "persistent.com",
-    "PFC" to "thewaltdisneycompany.com",
-    "PHOENIXLTD" to "thephoenixmills.com",
+    "PFC" to "pfcindia.in",
     "PIDILITIND" to "pidilite.com",
-    "PIIND" to "piindustries.com",
     "PNB" to "pnbindia.in",
     "POLICYBZR" to "policybazaar.com",
     "POLYCAB" to "polycab.com",
-    "POWERGRID" to "pfizer.com",
-    "POWERINDIA" to "hitachienergy.com",
-    "PREMIERENE" to "premierenergies.com",
+    "POWERGRID" to "powergrid.in",
     "PRESTIGE" to "prestigeconstructions.com",
-    "REC" to "chevron.com",
-    "RECLTD" to "chevron.com",
-    "AAPL" to "apple.com",
+    "REC" to "recindia.nic.in",
+    "RECLTD" to "recindia.nic.in",
     "RVNL" to "rvnl.org",
     "SAIL" to "sail.co.in",
-    "WFC" to "wellsfargo.com",
-    "AXP" to "americanexpress.com",
-    "MET" to "metlife.com",
-    "WFC" to "sbi.co.in",
+    "SBIN" to "sbi.co.in",
     "SHREECEM" to "shreecement.com",
     "SHRIRAMFIN" to "shriramfinance.in",
     "SIEMENS" to "siemens.com",
-    "SOLARINDS" to "solargroup.com",
-    "SONACOMS" to "sonacomstar.com",
     "SRF" to "srf.com",
     "SUNPHARMA" to "sunpharma.com",
-    "SUPREMEIND" to "supreme.co.in",
     "SUZLON" to "suzlon.com",
     "SWIGGY" to "swiggy.com",
-    "T" to "att.com",
-    "KO" to "coca-cola.com",
-    "CRM" to "salesforce.com",
-    "TSLA" to "tatamotors.com",
-    "NEE" to "nexteraenergy.com",
-    "WMT" to "walmart.com",
-    "INTU" to "intuit.com",
-    "MSFT" to "microsoft.com",
+    "TATAMOTORS" to "tatamotors.com",
+    "TCS" to "tcs.com",
     "TECHM" to "techmahindra.com",
-    "TIINDIA" to "tiindia.com",
     "TITAN" to "titancompany.in",
-    "TMPV" to "tatamotors.com",
     "TORNTPHARM" to "torrentpharma.com",
-    "TORNTPOWER" to "torrentpower.com",
     "TRENT" to "trentlimited.com",
     "TVSMOTOR" to "tvsmotor.com",
     "ULTRACEMCO" to "ultratechcement.com",
     "UNIONBANK" to "unionbankofindia.co.in",
-    "UNITDSPR" to "diageo.com",
-    "UPL" to "upl-ltd.com",
-    "VBL" to "varunpepsi.com",
-    "VEDL" to "exxonmobil.com",
-    "VMM" to "vedantfashions.com",
+    "VEDL" to "vedantalimited.com",
     "VOLTAS" to "voltas.com",
-    "WAAREEENER" to "waaree.com",
-    "IBM" to "ibm.com",
     "YESBANK" to "yesbank.in",
     "ZOMATO" to "zomato.com",
     "ZYDUSLIFE" to "zyduslife.com"
@@ -301,55 +258,43 @@ data class StockBrandInfo(
 )
 
 val STOCK_BRAND_MAP = mapOf(
-    "AAPL" to StockBrandInfo("Apple", Color(0xFF0A2540)),
-    "MSFT" to StockBrandInfo("MSFT", Color(0xFF0F2C59)),
-    "NVDA" to StockBrandInfo("NVDA", Color(0xFF007CC3)),
-    "INFOSYS" to StockBrandInfo("NVDA", Color(0xFF007CC3)),
-    "JPM" to StockBrandInfo("JPMorgan", Color(0xFF004C8F)),
-    "JPM" to StockBrandInfo("JPMorgan", Color(0xFF004C8F)),
-    "BAC" to StockBrandInfo("Bank of America", Color(0xFFF37021)),
-    "WFC" to StockBrandInfo("Wells Fargo", Color(0xFF0083CA)),
-    "WFC" to StockBrandInfo("Wells Fargo", Color(0xFF0083CA)),
-    "AMZN" to StockBrandInfo("ARTL", Color(0xFFE40000)),
+    "TCS" to StockBrandInfo("TCS", Color(0xFF003366)),
+    "INFY" to StockBrandInfo("INFY", Color(0xFF007CC3)),
+    "ITC" to StockBrandInfo("ITC", Color(0xFF0056B3)),
+    "COALINDIA" to StockBrandInfo("CIL", Color(0xFF2E7D32)),
+    "VEDL" to StockBrandInfo("VEDL", Color(0xFFD84315)),
+    "HINDUNILVR" to StockBrandInfo("HUL", Color(0xFF002244)),
+    "BPCL" to StockBrandInfo("BPCL", Color(0xFF006699)),
+    "IOC" to StockBrandInfo("IOC", Color(0xFFE65100)),
+    "ONGC" to StockBrandInfo("ONGC", Color(0xFF8B0000)),
+    "NTPC" to StockBrandInfo("NTPC", Color(0xFF0288D1)),
+    "POWERGRID" to StockBrandInfo("PGCIL", Color(0xFF00796B)),
+    "PFC" to StockBrandInfo("PFC", Color(0xFF004080)),
+    "RECLTD" to StockBrandInfo("REC", Color(0xFF1B5E20)),
+    "HCLTECH" to StockBrandInfo("HCL", Color(0xFF0056B3)),
+    "LICI" to StockBrandInfo("LIC", Color(0xFF1E293B)),
+    "TATAMOTORS" to StockBrandInfo("TATA", Color(0xFF0A2540)),
+    "SBIN" to StockBrandInfo("SBI", Color(0xFF0083CA)),
+    "GAIL" to StockBrandInfo("GAIL", Color(0xFFE53935)),
+    "NMDC" to StockBrandInfo("NMDC", Color(0xFF1B5E20)),
     "AIRTEL" to StockBrandInfo("ARTL", Color(0xFFE40000)),
-    "PG" to StockBrandInfo("PG", Color(0xFF990000)),
     "KOTAKBANK" to StockBrandInfo("KOTAK", Color(0xFFD32F2F)),
-    "LT" to StockBrandInfo("META", Color(0xFF005A9C)),
+    "LT" to StockBrandInfo("L&T", Color(0xFF005A9C)),
     "AXISBANK" to StockBrandInfo("AXIS", Color(0xFF800020)),
     "ASIANPAINT" to StockBrandInfo("AP", Color(0xFFE53935)),
     "MARUTI" to StockBrandInfo("MSIL", Color(0xFF002F6C)),
     "SUNPHARMA" to StockBrandInfo("SUN", Color(0xFFF57C00)),
-    "IBM" to StockBrandInfo("IBM", Color(0xFF34113B)),
-    "HCLTECH" to StockBrandInfo("HCL", Color(0xFF0056B3)),
     "TITAN" to StockBrandInfo("TITAN", Color(0xFF1E293B)),
     "ULTRACEMCO" to StockBrandInfo("ULTRA", Color(0xFFE65100)),
-    "GOOGL" to StockBrandInfo("BAJAJ", Color(0xFF004080)),
     "BAJAJFINSV" to StockBrandInfo("BAJAJ", Color(0xFF004080)),
     "NESTLEIND" to StockBrandInfo("NESTLE", Color(0xFF7B1FA2)),
-    "COALINDIA" to StockBrandInfo("CIL", Color(0xFF2E7D32)),
-    "VEDL" to StockBrandInfo("Exxon", Color(0xFFD84315)),
-    "PFC" to StockBrandInfo("Disney", Color(0xFF004080)),
-    "RECLTD" to StockBrandInfo("REC", Color(0xFF1B5E20)),
-    "REC" to StockBrandInfo("REC", Color(0xFF1B5E20)),
-    "BPCL" to StockBrandInfo("Coca-Cola", Color(0xFF006699)),
-    "ONGC" to StockBrandInfo("PepsiCo", Color(0xFF8B0000)),
-    "IOC" to StockBrandInfo("IOC", Color(0xFFE65100)),
-    "NTPC" to StockBrandInfo("Merck", Color(0xFF0288D1)),
-    "POWERGRID" to StockBrandInfo("PGCIL", Color(0xFF00796B)),
-    "HINDUNILVR" to StockBrandInfo("HUL", Color(0xFF002244)),
-    "WMT" to StockBrandInfo("Walmart", Color(0xFF003D7A)),
-    "TSLA" to StockBrandInfo("Walmart", Color(0xFF003D7A)),
-    "KO" to StockBrandInfo("Coca-Cola", Color(0xFF003D7A)),
     "ADANIENT" to StockBrandInfo("ADANI", Color(0xFF1A237E)),
-    "ADANIPORTS" to StockBrandInfo("ADANI", Color(0xFF1A237E)),
     "JSWSTEEL" to StockBrandInfo("JSW", Color(0xFF1565C0)),
     "GRASIM" to StockBrandInfo("GRASIM", Color(0xFFC62828)),
     "HEROMOTOCO" to StockBrandInfo("HERO", Color(0xFFD32F2F)),
     "CIPLA" to StockBrandInfo("CIPLA", Color(0xFF0288D1)),
     "DRREDDY" to StockBrandInfo("REDDY", Color(0xFFC62828)),
-    "BRITANNIA" to StockBrandInfo("BRIT", Color(0xFFD32F2F)),
-    "INDUSINDBK" to StockBrandInfo("INDUS", Color(0xFF880E4F)),
-    "APOLLOHOSP" to StockBrandInfo("APOLLO", Color(0xFF00695C))
+    "BRITANNIA" to StockBrandInfo("BRIT", Color(0xFFD32F2F))
 )
 
 val AVATAR_PALETTE = listOf(
@@ -501,27 +446,29 @@ fun generateUpcomingDividends(): List<UpcomingDividend> {
         val year = c.get(Calendar.YEAR)
         val month = String.format(Locale.US, "%02d", c.get(Calendar.MONTH) + 1)
         val day = String.format(Locale.US, "%02d", c.get(Calendar.DAY_OF_MONTH))
-        return "₹year-$month-$day"
+        return "$year-$month-$day"
     }
 
     return listOf(
-        UpcomingDividend("AAPL", "Apple Inc.", 10.00, "Final Dividend", getFutureDate(3), getFutureDate(5), 3012.40, 0.33),
-        UpcomingDividend("MSFT", "Microsoft Corp.", 28.00, "Interim Dividend", getFutureDate(6), getFutureDate(8), 4210.00, 0.67),
-        UpcomingDividend("NVDA", "NVIDIA Corp.", 20.00, "Interim Dividend", getFutureDate(9), getFutureDate(11), 1820.50, 1.10),
-        UpcomingDividend("JPM", "JPMorgan Chase & Co.", 19.50, "Final Dividend", getFutureDate(12), getFutureDate(14), 1640.00, 1.18),
-        UpcomingDividend("PG", "Procter & Gamble Co.", 7.50, "Interim Dividend", getFutureDate(15), getFutureDate(17), 488.20, 1.53),
-        UpcomingDividend("COALINDIA", "Bank of America Corp.", 15.25, "Interim Dividend", getFutureDate(18), getFutureDate(20), 512.00, 2.97),
-        UpcomingDividend("VEDL", "Exxon Mobil Corp.", 20.00, "Special Dividend", getFutureDate(21), getFutureDate(23), 435.60, 4.59),
-        UpcomingDividend("PFC", "Walt Disney Co.", 3.50, "Interim Dividend", getFutureDate(24), getFutureDate(26), 520.10, 0.67),
-        UpcomingDividend("RECLTD", "Chevron Corp.", 4.50, "Interim Dividend", getFutureDate(28), getFutureDate(30), 585.30, 0.76),
-        UpcomingDividend("BPCL", "Coca-Cola Co.", 10.50, "Final Dividend", getFutureDate(32), getFutureDate(34), 345.80, 3.03),
-        UpcomingDividend("ONGC", "PepsiCo Inc.", 6.00, "Interim Dividend", getFutureDate(36), getFutureDate(38), 320.40, 1.87),
-        UpcomingDividend("XOM", "Exxon Mobil Corporation", 7.00, "Final Dividend", getFutureDate(40), getFutureDate(42), 175.20, 3.99),
-        UpcomingDividend("NTPC", "Merck & Co. Inc.", 3.25, "Interim Dividend", getFutureDate(44), getFutureDate(46), 410.90, 0.79),
-        UpcomingDividend("POWERGRID", "Pfizer Inc.", 4.50, "Interim Dividend", getFutureDate(48), getFutureDate(50), 340.10, 1.32),
-        UpcomingDividend("HINDUNILVR", "Johnson & Johnson", 24.00, "Interim Dividend", getFutureDate(52), getFutureDate(54), 2720.00, 0.88),
-        UpcomingDividend("WMT", "Walmart Inc.", 3.60, "Final Dividend", getFutureDate(56), getFutureDate(58), 162.40, 2.21),
-        UpcomingDividend("HCLTECH", "Visa Inc.", 12.00, "Interim Dividend", getFutureDate(60), getFutureDate(62), 1580.00, 0.75)
+        UpcomingDividend("TCS", "Tata Consultancy Services Ltd.", 10.00, "Interim Dividend", getFutureDate(3), getFutureDate(5), 3850.00, 0.26),
+        UpcomingDividend("INFY", "Infosys Limited", 20.00, "Final Dividend", getFutureDate(5), getFutureDate(7), 1820.00, 1.10),
+        UpcomingDividend("ITC", "ITC Limited", 7.50, "Final Dividend", getFutureDate(8), getFutureDate(10), 485.00, 1.55),
+        UpcomingDividend("COALINDIA", "Coal India Limited", 15.25, "Interim Dividend", getFutureDate(10), getFutureDate(12), 512.00, 2.98),
+        UpcomingDividend("VEDL", "Vedanta Limited", 20.50, "Special Dividend", getFutureDate(12), getFutureDate(14), 435.60, 4.71),
+        UpcomingDividend("HINDUNILVR", "Hindustan Unilever Ltd.", 24.00, "Interim Dividend", getFutureDate(15), getFutureDate(17), 2720.00, 0.88),
+        UpcomingDividend("BPCL", "Bharat Petroleum Corp. Ltd.", 10.50, "Final Dividend", getFutureDate(18), getFutureDate(20), 345.80, 3.04),
+        UpcomingDividend("IOC", "Indian Oil Corporation Ltd.", 7.00, "Final Dividend", getFutureDate(21), getFutureDate(23), 175.20, 3.99),
+        UpcomingDividend("ONGC", "Oil & Natural Gas Corp. Ltd.", 6.00, "Interim Dividend", getFutureDate(24), getFutureDate(26), 320.40, 1.87),
+        UpcomingDividend("NTPC", "NTPC Limited", 3.25, "Interim Dividend", getFutureDate(27), getFutureDate(29), 410.90, 0.79),
+        UpcomingDividend("POWERGRID", "Power Grid Corp. of India", 4.50, "Interim Dividend", getFutureDate(30), getFutureDate(32), 340.10, 1.32),
+        UpcomingDividend("PFC", "Power Finance Corporation", 3.50, "Interim Dividend", getFutureDate(33), getFutureDate(35), 520.10, 0.67),
+        UpcomingDividend("RECLTD", "REC Limited", 4.50, "Interim Dividend", getFutureDate(36), getFutureDate(38), 585.30, 0.77),
+        UpcomingDividend("HCLTECH", "HCL Technologies Ltd.", 12.00, "Interim Dividend", getFutureDate(40), getFutureDate(42), 1580.00, 0.76),
+        UpcomingDividend("LICI", "Life Insurance Corp. of India", 6.00, "Final Dividend", getFutureDate(44), getFutureDate(46), 1020.00, 0.59),
+        UpcomingDividend("TATAMOTORS", "Tata Motors Limited", 6.00, "Final Dividend", getFutureDate(48), getFutureDate(50), 1080.00, 0.56),
+        UpcomingDividend("SBIN", "State Bank of India", 13.70, "Final Dividend", getFutureDate(52), getFutureDate(54), 840.00, 1.63),
+        UpcomingDividend("GAIL", "GAIL (India) Limited", 5.50, "Interim Dividend", getFutureDate(56), getFutureDate(58), 230.00, 2.39),
+        UpcomingDividend("NMDC", "NMDC Limited", 5.75, "Interim Dividend", getFutureDate(60), getFutureDate(62), 260.00, 2.21)
     )
 }
 
@@ -577,7 +524,8 @@ fun DividendsScreen(
                 val updated = withContext(Dispatchers.IO) {
                     dividendList.map { item ->
                         try {
-                            val resp = YahooRetrofit.service.getChart(item.symbol, "1d", "1m")
+                            val yahooSymbol = if (item.symbol.contains(".")) item.symbol else "${item.symbol}.NS"
+                            val resp = YahooRetrofit.service.getChart(yahooSymbol, "1d", "1m")
                             val price = resp.chart?.result?.firstOrNull()?.meta?.regularMarketPrice
                             if (price != null && price > 0) {
                                 val newYield = (item.amountPerShare / price) * 100
@@ -595,6 +543,10 @@ fun DividendsScreen(
                 isLoading = false
             }
         }
+    }
+
+    LaunchedEffect(Unit) {
+        refreshDividends()
     }
 
     val validUpcomingDividends = remember(todayDateStr, searchQuery, dividendList) {
@@ -623,7 +575,7 @@ fun DividendsScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Surface(
                     color = Color(0xFFEDE9FE),
@@ -642,7 +594,7 @@ fun DividendsScreen(
                             modifier = Modifier.size(13.dp)
                         )
                         Text(
-                            text = "Upcoming Dividends",
+                            text = "Indian Stocks Upcoming Dividends (NSE)",
                             fontSize = 10.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF7C3AED),
@@ -650,10 +602,45 @@ fun DividendsScreen(
                         )
                     }
                 }
+
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        color = Color(0xFF7C3AED),
+                        strokeWidth = 2.dp
+                    )
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // Search bar
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            modifier = Modifier
+                .fillMaxWidth(),
+            placeholder = { Text("Search Indian stock or ticker...", fontSize = 12.sp, color = Color(0xFF94A3B8)) },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search", tint = Color(0xFF64748B), modifier = Modifier.size(18.dp)) },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { searchQuery = "" }) {
+                        Icon(Icons.Default.Clear, contentDescription = "Clear", tint = Color(0xFF64748B), modifier = Modifier.size(18.dp))
+                    }
+                }
+            },
+            singleLine = true,
+            shape = RoundedCornerShape(8.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedBorderColor = Color(0xFFE2E8F0),
+                focusedBorderColor = Color(0xFF7C3AED),
+                unfocusedContainerColor = Color.White,
+                focusedContainerColor = Color.White
+            )
+        )
+
+        Spacer(modifier = Modifier.height(6.dp))
 
         if (validUpcomingDividends.isEmpty()) {
             Box(
@@ -676,7 +663,7 @@ fun DividendsScreen(
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     Text(
-                        text = "All past ex-dates are filtered out automatically.",
+                        text = "Try adjusting your search query.",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -721,7 +708,7 @@ fun formatDividendDate(dateStr: String): String {
         val dayOfWeekSdf = SimpleDateFormat("EEEE", Locale.US)
         val dayOfWeek = dayOfWeekSdf.format(date) // e.g. "Friday"
         
-        return "₹dayOfWeek ${day}$suffix $monthName $year"
+        return "$dayOfWeek ${day}$suffix $monthName $year"
     } catch (e: Exception) {
         return dateStr
     }
@@ -737,7 +724,7 @@ fun getPayoutDate(exDateStr: String): String {
         val year = cal.get(Calendar.YEAR)
         val month = String.format(Locale.US, "%02d", cal.get(Calendar.MONTH) + 1)
         val day = String.format(Locale.US, "%02d", cal.get(Calendar.DAY_OF_MONTH))
-        return "₹year-$month-$day"
+        return "$year-$month-$day"
     } catch (e: Exception) {
         return exDateStr
     }
