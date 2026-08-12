@@ -72,7 +72,7 @@ class PriceAlertWorker(
             val builder = NotificationCompat.Builder(context, "PRICE_ALERTS")
                 .setSmallIcon(android.R.drawable.ic_dialog_alert)
                 .setContentTitle("Price Alert: $nameToDisplay")
-                .setContentText("₹nameToDisplay has reached ₹${"%.2f".format(currentPrice)} (Target: ₹${"%.2f".format(alert.priceTarget)})")
+                .setContentText("$nameToDisplay has reached ₹${"%.2f".format(currentPrice)} (Target: ₹${"%.2f".format(alert.priceTarget)})")
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true)

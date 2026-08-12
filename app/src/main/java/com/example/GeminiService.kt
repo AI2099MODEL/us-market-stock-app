@@ -161,7 +161,7 @@ object GeminiStockAnalyzer {
 
         // Fetch real-time live internet news for this stock from web feeds
         val liveArticles = try {
-            NewsTickerService.fetchNewsForQuery("₹companyName $symbol stock market news")
+            NewsTickerService.fetchNewsForQuery("$companyName $symbol stock market news")
         } catch (e: Exception) {
             emptyList()
         }
@@ -172,16 +172,16 @@ object GeminiStockAnalyzer {
         }
 
         val prompt = """
-            You are an expert Stock Market Analyst for Indian Commodity Markets (MCX & Global Equivalents), connected LIVE to internet financial feeds.
+            You are an expert Stock Market Analyst for US (NYSE/NASDAQ) and Global Equities, connected LIVE to internet financial feeds.
             
-            Perform real-time Indian commodity analysis for:
+            Perform real-time stock analysis for:
             - Ticker: $symbol
-            - Commodity Name: $companyName
-            - Current Price (CMP): ₹${"%.2f".format(effectivePrice)} (${"%.2f".format(effectiveChangePct)}%)
+            - Company Name: $companyName
+            - Current Price (CMP): $${"%.2f".format(effectivePrice)} (${"%.2f".format(effectiveChangePct)}%)
             - Technical Score: $techScore/10
             - Active Indicators: $techStrategies
-            - Suggested Stop Loss: ₹${"%.2f".format(stopLoss)}
-            - Target 1: ₹${"%.2f".format(target1)} | Target 2: ₹${"%.2f".format(target2)}
+            - Suggested Stop Loss: $${"%.2f".format(stopLoss)}
+            - Target 1: $${"%.2f".format(target1)} | Target 2: $${"%.2f".format(target2)}
 
             --- REAL-TIME LIVE INTERNET NEWS & WEB GROUNDING DATA (FETCHED LIVE) ---
             $liveNewsContext
@@ -247,9 +247,9 @@ object GeminiStockAnalyzer {
                 recommendation = rec,
                 confidenceScore = confidence,
                 keyPoints = if (keyPoints.isNotEmpty()) keyPoints else listOf(
-                    "Current Market Price (CMP) is ₹${"%.2f".format(effectivePrice)} with technical signal score $techScore/10.",
+                    "Current Market Price (CMP) is $${"%.2f".format(effectivePrice)} with technical signal score $techScore/10.",
                     "Primary strategy active: $techStrategies.",
-                    "Calculated Stop Loss at ₹${"%.2f".format(stopLoss)} with upside targets at ₹${"%.2f".format(target1)} and ₹${"%.2f".format(target2)}."
+                    "Calculated Stop Loss at $${"%.2f".format(stopLoss)} with upside targets at $${"%.2f".format(target1)} and $${"%.2f".format(target2)}."
                 ),
                 technicalPoints = if (techPoints.isNotEmpty()) techPoints else listOf(
                     "Price action indicates consolidation near key support zones.",
@@ -262,9 +262,9 @@ object GeminiStockAnalyzer {
                 ),
                 riskPoints = if (riskPoints.isNotEmpty()) riskPoints else listOf(
                     "Broad market volatility and overall index fluctuations.",
-                    "Strictly adhere to Stop Loss at ₹${"%.2f".format(stopLoss)}."
+                    "Strictly adhere to Stop Loss at $${"%.2f".format(stopLoss)}."
                 ),
-                tradePlan = "Entry: ₹${"%.2f".format(effectivePrice)} | Target 1: ₹${"%.2f".format(target1)} | Target 2: ₹${"%.2f".format(target2)} | Stop Loss: ₹${"%.2f".format(stopLoss)}",
+                tradePlan = "Entry: $${"%.2f".format(effectivePrice)} | Target 1: $${"%.2f".format(target1)} | Target 2: $${"%.2f".format(target2)} | Stop Loss: $${"%.2f".format(stopLoss)}",
                 rawMarkdown = responseText
             )
         } catch (e: Exception) {
@@ -272,21 +272,21 @@ object GeminiStockAnalyzer {
                 recommendation = if (techScore >= 6) "BUY" else "HOLD",
                 confidenceScore = 75,
                 keyPoints = listOf(
-                    "CMP: ₹${"%.2f".format(effectivePrice)} (${"%.2f".format(effectiveChangePct)}%).",
+                    "CMP: $${"%.2f".format(effectivePrice)} (${"%.2f".format(effectiveChangePct)}%).",
                     "Technical Score: $techScore/10 based on automated scanning.",
                     "Strategy: $techStrategies."
                 ),
                 technicalPoints = listOf(
                     "Signal: $techReasons.",
-                    "Target 1: ₹${"%.2f".format(target1)} | Target 2: ₹${"%.2f".format(target2)}."
+                    "Target 1: $${"%.2f".format(target1)} | Target 2: $${"%.2f".format(target2)}."
                 ),
                 fundamentalPoints = listOf(
                     "Leading market participant with liquid trading volumes."
                 ),
                 riskPoints = listOf(
-                    "Always manage downside risk with Stop Loss at ₹${"%.2f".format(stopLoss)}."
+                    "Always manage downside risk with Stop Loss at $${"%.2f".format(stopLoss)}."
                 ),
-                tradePlan = "Entry: ₹${"%.2f".format(effectivePrice)} | Target 1: ₹${"%.2f".format(target1)} | Target 2: ₹${"%.2f".format(target2)} | Stop Loss: ₹${"%.2f".format(stopLoss)}",
+                tradePlan = "Entry: $${"%.2f".format(effectivePrice)} | Target 1: $${"%.2f".format(target1)} | Target 2: $${"%.2f".format(target2)} | Stop Loss: $${"%.2f".format(stopLoss)}",
                 rawMarkdown = "Analysis for $symbol"
             )
         }
@@ -328,9 +328,9 @@ object GeminiStockAutocompleter {
         val apiKey = UserKeyManager.getGeminiApiKey()
         val prompt = """
             You are an AI stock market search autocomplete assistant for US (NYSE/NASDAQ) and global stock markets.
-            The user typed: "₹query".
+            The user typed: "$query".
 
-            Identify up to 6 real companies or stock tickers matching or closely related to "₹query".
+            Identify up to 6 real companies or stock tickers matching or closely related to "$query".
             For US equities, use standard US tickers (e.g. AAPL, MSFT, TSLA, JPM, GOOGL).
             For US or Global equities, use standard ticker symbols (e.g., AAPL, TSLA, NVDA).
 
@@ -681,7 +681,7 @@ object GeminiMarketChatAssistant {
             
             Current Date & Time: $nowStr
             
-            USER QUESTION: "₹userQuery"
+            USER QUESTION: "$userQuery"
 
             REAL-TIME LIVE INTERNET NEWS & WEB GROUNDING CONTEXT (FETCHED LIVE RIGHT NOW):
             $liveContext

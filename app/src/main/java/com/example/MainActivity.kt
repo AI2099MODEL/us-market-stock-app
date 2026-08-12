@@ -1740,11 +1740,14 @@ fun DashboardScreen(modifier: Modifier = Modifier, onSymbolSelected: (String) ->
 
     val liveQuotes by DhanWebSocketManager.liveQuotes.collectAsState()
 
-    // Real-time CMP Refresh for Breakout Commodity Contracts from Dhan WebSocket live quotes
+    // Real-time CMP Refresh for Breakout Contracts from Dhan WebSocket live quotes
     LaunchedEffect(liveQuotes) {
         if (liveQuotes.isNotEmpty() && scanResults.isNotEmpty() && activeSubTab == "BREAKOUTS") {
             scanResults = scanResults.map { item ->
-                val q = liveQuotes[item.ticker]
+                val baseComm = IndianCommodityRepository.resolveBaseSymbol(item.ticker)
+                val cleanTicker = item.ticker.split(" ").firstOrNull() ?: item.ticker
+                val q = liveQuotes[item.ticker] ?: liveQuotes[cleanTicker] ?: liveQuotes[baseComm]
+                
                 if (q != null && q.price > 0.0) {
                     val finalLivePrice = q.price
                     val prevClose = finalLivePrice - q.change

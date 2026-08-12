@@ -196,7 +196,7 @@ fun WatchlistScreen(
                         )
                         Column {
                             Text("Active Alerts", fontSize = 9.sp, color = Color(0xFF64748B))
-                            Text("₹activeCount / ${alerts.size}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+                            Text("$activeCount / ${alerts.size}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
                         }
                     }
                 }
@@ -220,7 +220,7 @@ fun WatchlistScreen(
                         )
                         Column {
                             Text("Triggered", fontSize = 9.sp, color = Color(0xFF64748B))
-                            Text("₹reachedCount Reached", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+                            Text("$reachedCount Reached", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
                         }
                     }
                 }
@@ -381,7 +381,7 @@ fun WatchlistScreen(
                                                 fontWeight = FontWeight.Normal
                                             )
                                             Text(
-                                                text = "₹${String.format(Locale.US, "%.1f", alert.priceTarget)}",
+                                                text = "$${String.format(Locale.US, "%.1f", alert.priceTarget)}",
                                                 color = Color(0xFF0F172A),
                                                 fontSize = 9.sp,
                                                 fontWeight = FontWeight.SemiBold
@@ -389,7 +389,7 @@ fun WatchlistScreen(
                                         }
                                     }
 
-                                    val cmpText = if (cmp != null) "₹${String.format(Locale.US, "%.1f", cmp)}" else "--"
+                                    val cmpText = if (cmp != null) "$${String.format(Locale.US, "%.1f", cmp)}" else "--"
                                     val cmpColor = if (isTargetReached) Color(0xFF10B981) else Color(0xFF0F172A)
 
                                     Text(
@@ -424,7 +424,7 @@ fun WatchlistScreen(
                                                 .padding(vertical = 4.dp, horizontal = 6.dp)
                                         ) {
                                             Text(
-                                                text = "🔔 EX-DIVIDEND TOMORROW\nAmount: ₹${matchedDividend.amountPerShare}",
+                                                text = "🔔 EX-DIVIDEND TOMORROW\nAmount: $${matchedDividend.amountPerShare}",
                                                 fontSize = 8.5.sp,
                                                 lineHeight = 11.sp,
                                                 fontWeight = FontWeight.Bold,
@@ -443,7 +443,7 @@ fun WatchlistScreen(
                                                 .padding(vertical = 4.dp, horizontal = 6.dp)
                                         ) {
                                             Text(
-                                                text = "💰 PAYOUT TOMORROW\nAmount: ₹${matchedDividend.amountPerShare}",
+                                                text = "💰 PAYOUT TOMORROW\nAmount: $${matchedDividend.amountPerShare}",
                                                 fontSize = 8.5.sp,
                                                 lineHeight = 11.sp,
                                                 fontWeight = FontWeight.Bold,
@@ -636,7 +636,7 @@ private fun AddPriceAlertAiDialog(
         selectedTicker = formatted
         val matchedName = name ?: STOCK_DICTIONARY.find { it.symbol.equals(formatted, ignoreCase = true) }?.name ?: symbol
         selectedStockName = matchedName
-        searchQuery = "₹matchedName (${formatted})"
+        searchQuery = "$matchedName (${formatted})"
         aiSuggestions = emptyList()
     }
 
@@ -840,7 +840,7 @@ private fun AddPriceAlertAiDialog(
                                 if (isFetchingPrice) {
                                     Text("Fetching Live Price...", fontSize = 10.sp, color = Color(0xFF15803D))
                                 } else if (fetchedPrice != null) {
-                                    Text("Live CMP: ₹${String.format(Locale.US, "%.2f", fetchedPrice)}", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF15803D))
+                                    Text("Live CMP: $${String.format(Locale.US, "%.2f", fetchedPrice)}", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF15803D))
                                 }
                             }
 
