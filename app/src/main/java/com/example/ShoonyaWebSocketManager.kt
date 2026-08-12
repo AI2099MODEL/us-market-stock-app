@@ -136,16 +136,6 @@ object ShoonyaWebSocketManager {
             val changeStr = json.optString("pc")
             
             if (ltp != null && ts.isNotEmpty()) {
-                val currentQuotes = _liveQuotes.value.toMutableMap()
-                val existing = currentQuotes[ts]
-                val updatedQuote = if (existing != null) {
-                    existing.copy(price = ltp, change = changeStr.toDoubleOrNull() ?: existing.change)
-                } else {
-                    CommodityQuote(ts, ts, ltp, changeStr.toDoubleOrNull() ?: 0.0, 0.0, 0.0, 0.0, 0, "SHOONYA")
-                }
-                currentQuotes[ts] = updatedQuote
-                
-                // Map back to active base symbol like "GOLD", "GOLDM"
                 var cleanTs = ts
                 val bases = listOf("GOLD", "SILVER", "CRUDEOIL", "NATURALGAS", "COPPER", "ZINC", "ALUMINIUM", "NICKEL")
                 for (base in bases) {
@@ -157,8 +147,20 @@ object ShoonyaWebSocketManager {
                         break
                     }
                 }
+                val isMini = cleanTs.endsWith("M") && cleanTs != "GOLD"
+                val finalLtp = if (isMini && ltp > 1000.0) ltp / 10.0 else ltp
+                val finalChange = if (isMini && ltp > 1000.0) (changeStr.toDoubleOrNull() ?: 0.0) / 10.0 else (changeStr.toDoubleOrNull() ?: 0.0)
+
+                val currentQuotes = _liveQuotes.value.toMutableMap()
+                val existing = currentQuotes[ts]
+                val updatedQuote = if (existing != null) {
+                    existing.copy(price = finalLtp, change = finalChange.takeIf { it != 0.0 } ?: existing.change)
+                } else {
+                    CommodityQuote(cleanTs, cleanTs, finalLtp, finalChange, 0.0, 0.0, 0.0, 0, "SHOONYA")
+                }
+                currentQuotes[ts] = updatedQuote
                 currentQuotes[cleanTs] = updatedQuote.copy(symbol = cleanTs, name = cleanTs)
-                
+
                 _liveQuotes.value = currentQuotes
             }
         } catch (e: Exception) {

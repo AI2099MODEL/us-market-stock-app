@@ -30,7 +30,7 @@ object MarketEngine {
     private var monitoringJob: Job? = null
     private var liveStreamJob: Job? = null
 
-    val isEngineRunning = MutableStateFlow(false)
+    val isEngineRunning = MutableStateFlow(true)
     val engineLogs = MutableStateFlow<List<String>>(emptyList())
     val lastScanTime = MutableStateFlow(0L)
     val isScanning = MutableStateFlow(false)
