@@ -121,7 +121,7 @@ fun AutoTraderTabContent(modifier: Modifier = Modifier) {
                         )
                     }
                     Text(
-                        text = "• Index & Stock Options: Strictly Intraday ONLY (9:15 AM - 3:00 PM IST). No Options carried as BTST.\n• Post-3:00 PM Engine Shift: Auto-squares off option gains & executes BTST Equity (High RVOL > 2.5x Breakout Stocks)\n• Weekly Expiry Contracts: Scans high-liquidity Weekly Index Options (NIFTY, BANKNIFTY, FINNIFTY)\n• Capital Limits: ₹2,00,000 Options + ₹2,00,000 Commodities/BTST (₹4 Lakhs Total Cap)",
+                        text = "• Strictly MCX Commodities Only (9:00 AM - 11:30 PM IST)\n• Real-Time Dhan WebSockets: Trades executed using live tick streaming P&L\n• Capital Limit: ₹2,00,000 Total Commodity Allocation (₹50,000 per trade)",
                         fontSize = 10.sp,
                         color = Color(0xFF166534),
                         lineHeight = 14.sp
@@ -621,8 +621,11 @@ fun ActiveTradeCardItem(trade: VirtualTrade) {
     val profitPct = if (trade.entryPrice > 0.0) {
         if (isShort) ((trade.entryPrice - currentCmp) / trade.entryPrice) * 100.0 else ((currentCmp - trade.entryPrice) / trade.entryPrice) * 100.0
     } else trade.profitPercent
+    
     val grossProfit = trade.allocatedAmount * (profitPct / 100.0)
-    val netProfit = grossProfit - 30.0
+    val turnover = trade.allocatedAmount * 2.0
+    val brokerageDetails = IndianCommodityRepository.calculateDhanBrokerage(turnover, isSell = true, isOptions = false)
+    val netProfit = grossProfit - brokerageDetails.totalCharges
 
     Card(
         modifier = Modifier.fillMaxWidth(),

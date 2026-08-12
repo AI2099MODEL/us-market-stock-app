@@ -65,7 +65,7 @@ object IndianCommodityRepository {
     /**
      * Fetch Dhan Brokerage Calculator charges for MCX Commodity Futures and Options.
      */
-    suspend fun calculateDhanBrokerage(turnover: Double, isSell: Boolean, isOptions: Boolean = false): BrokerageDetails = withContext(Dispatchers.IO) {
+    fun calculateDhanBrokerage(turnover: Double, isSell: Boolean, isOptions: Boolean = false): BrokerageDetails {
         val apiKey = try { BuildConfig.DHAN_API_KEY } catch (e: Exception) { "" }
         if (!apiKey.isNullOrBlank() && apiKey != "MY_DHAN_API_KEY" && apiKey != "YOUR_API_KEY") {
             try {
@@ -87,7 +87,7 @@ object IndianCommodityRepository {
         val stt = if (isSell && !isOptions) turnover * 0.0001 else 0.0
 
         val totalCharges = brokerage + stt + exchangeCharges + gst + sebiCharges + stampDuty
-        return@withContext BrokerageDetails(brokerage, stt, exchangeCharges, gst, sebiCharges, stampDuty, totalCharges)
+        return BrokerageDetails(brokerage, stt, exchangeCharges, gst, sebiCharges, stampDuty, totalCharges)
     }
 
     fun resolveBaseSymbol(ticker: String): String {

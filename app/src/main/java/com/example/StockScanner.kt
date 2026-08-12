@@ -36,14 +36,36 @@ object StockScanner {
             val change = quote.change
             val changePercent = quote.changePercent
 
-            val signals = listOf("RSI Momentum", "MCX Volume Breakout", "SuperTrend")
-            val reasons = listOf("• Strong MCX volume participation & Dhan live feed momentum", "• Robust technical breakout above 20-Day High")
-            val score = 88
+            val signals = mutableListOf<String>()
+            val reasons = mutableListOf<String>()
+            
+            val isBullish = changePercent >= 0.0
+            val direction = if (isBullish) "BULLISH" else "BEARISH"
+            val absChange = kotlin.math.abs(changePercent)
+            
+            val score = 60 + (absChange * 15).toInt().coerceAtMost(35)
+            
+            if (absChange > 1.2) {
+                signals.add("Volume Breakout")
+                reasons.add("• Strong momentum with >1.2% move on Dhan live feed")
+            }
+            if (absChange > 0.5) {
+                signals.add("Trend Continuation")
+                reasons.add("• Breaking key intraday support/resistance")
+            }
+            if (signals.isEmpty()) {
+                signals.add("Range Bound")
+                reasons.add("• Consolidating near current levels")
+            }
 
-            // Commodity Target Levels (+2.5% T1, +5.0% T2, -1.2% SL)
-            val stopLoss = price * 0.988
-            val target1 = price * 1.025
-            val target2 = price * 1.050
+            // Commodity Target Levels based on volatility
+            val isHighVol = ticker.startsWith("CRUDE") || ticker.startsWith("NATURAL")
+            val slPct = if (isHighVol) 0.015 else 0.008
+            val tpPct = if (isHighVol) 0.025 else 0.015
+            
+            val stopLoss = if (isBullish) price * (1.0 - slPct) else price * (1.0 + slPct)
+            val target1 = if (isBullish) price * (1.0 + tpPct) else price * (1.0 - tpPct)
+            val target2 = if (isBullish) price * (1.0 + (tpPct * 2)) else price * (1.0 - (tpPct * 2))
 
             ScanResult(
                 ticker = quote.symbol,
@@ -51,8 +73,8 @@ object StockScanner {
                 price = price,
                 strategies = signals.joinToString(", "),
                 score = score,
-                reasons = "• " + reasons.joinToString("\n• "),
-                signalStrength = "STRONG COMMODITY BREAKOUT",
+                reasons = reasons.joinToString("\n"),
+                signalStrength = "STRONG $direction",
                 stopLoss = stopLoss,
                 target1 = target1,
                 target2 = target2,
@@ -61,7 +83,7 @@ object StockScanner {
                 openPrice = previousClose,
                 change = change,
                 changePercent = changePercent,
-                isBtst = true,
+                isBtst = false,
                 assetType = "COMMODITY"
             )
         } catch (e: Exception) {
