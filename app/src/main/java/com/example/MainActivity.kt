@@ -1258,6 +1258,19 @@ fun StockBreakoutCard(
     val displaySymbol = res.ticker
     val changePct = res.changePercent ?: 0.0
 
+    val marginRequired = remember(res.ticker, res.price) {
+        val baseSymbol = IndianCommodityRepository.resolveBaseSymbol(res.ticker)
+        val contractInfo = IndianCommodityRepository.COMMODITY_CONTRACTS[baseSymbol]
+        if (contractInfo != null) {
+            val isMini = res.ticker.uppercase() != baseSymbol
+            val multiplier = if (isMini) contractInfo.miniLotSize else contractInfo.standardLotSize
+            (res.price * multiplier) * 0.10 // Approx 10% margin
+        } else {
+            0.0
+        }
+    }
+    val formattedMargin = if (marginRequired > 0.0) "Est. Margin: ₹" + String.format(Locale.US, "%,.0f", marginRequired) else ""
+
     val targetVal = res.target1 ?: (res.price * 1.08)
     val formattedTarget = String.format(Locale.US, "%.2f", targetVal)
 
