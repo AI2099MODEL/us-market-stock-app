@@ -252,17 +252,19 @@ object IndianCommodityRepository {
      * Uses strictly Dhan API and Dhan feed for MCX Commodities.
      * STRICTLY FOR COMMODITIES ONLY NOT FOR STOCKS.
      */
-    suspend fun fetchCommodityData(symbolKey: String): CommodityQuote? = withContext(Dispatchers.IO) {
+    suspend fun fetchCommodityData(symbolKey: String, skipWsCache: Boolean = false): CommodityQuote? = withContext(Dispatchers.IO) {
         val baseSymbol = resolveBaseSymbol(symbolKey)
         val entry = COMMODITY_TICKERS[baseSymbol] ?: return@withContext null
         val isMini = symbolKey.uppercase() != baseSymbol
         val name = if (isMini) COMMODITY_CONTRACTS[baseSymbol]?.miniName ?: "${entry.first} Mini" else entry.first
 
         // 0. Priority: Dhan WebSocket & Live Stream Feed
-        val liveWsQuote = DhanWebSocketManager.liveQuotes.value[symbolKey.uppercase()]
-            ?: DhanWebSocketManager.liveQuotes.value[baseSymbol]
-        if (liveWsQuote != null && liveWsQuote.price > 0.0) {
-            return@withContext if (isMini) liveWsQuote.copy(symbol = symbolKey.uppercase(), name = name) else liveWsQuote
+        if (!skipWsCache) {
+            val liveWsQuote = DhanWebSocketManager.liveQuotes.value[symbolKey.uppercase()]
+                ?: DhanWebSocketManager.liveQuotes.value[baseSymbol]
+            if (liveWsQuote != null && liveWsQuote.price > 0.0) {
+                return@withContext if (isMini) liveWsQuote.copy(symbol = symbolKey.uppercase(), name = name) else liveWsQuote
+            }
         }
 
         // 1. Try Dhan API
@@ -430,7 +432,7 @@ object IndianCommodityRepository {
     suspend fun fetchAllCommodityQuotes(): List<CommodityQuote> = withContext(Dispatchers.IO) {
         val allTickers = COMMODITY_TICKERS.keys.toList() + COMMODITY_CONTRACTS.values.map { it.miniSymbol }
         allTickers.map { symbol ->
-            async { fetchCommodityData(symbol) }
+            async { fetchCommodityData(symbol, skipWsCache = true) }
         }.awaitAll().filterNotNull()
     }
 }
