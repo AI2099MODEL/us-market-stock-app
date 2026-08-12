@@ -136,7 +136,7 @@ interface ProfitLogDao {
     suspend fun clearAllLogs()
 }
 
-@Database(entities = [PriceAlert::class, ScannedBreakout::class, VirtualTrade::class, ProfitLog::class], version = 5, exportSchema = false)
+@Database(entities = [PriceAlert::class, ScannedBreakout::class, VirtualTrade::class, ProfitLog::class], version = 6, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun priceAlertDao(): PriceAlertDao
     abstract fun scannedBreakoutDao(): ScannedBreakoutDao
