@@ -520,7 +520,7 @@ fun DividendsScreen(
         LiveDividendManager.initialize(context)
         if (liveDividends.isEmpty()) {
             scope.launch {
-                LiveDividendManager.fetchLiveDividendsFromInternet(context)
+                LiveDividendManager.fetchLiveDividendsFromInternet(context, force = true)
             }
         }
     }
@@ -596,7 +596,7 @@ fun DividendsScreen(
                 IconButton(
                     onClick = {
                         scope.launch {
-                            LiveDividendManager.fetchLiveDividendsFromInternet(context)
+                            LiveDividendManager.fetchLiveDividendsFromInternet(context, force = true)
                         }
                     },
                     enabled = !isLoading,
