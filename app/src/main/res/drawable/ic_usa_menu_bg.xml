@@ -1,0 +1,89 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="400dp"
+    android:height="100dp"
+    android:viewportWidth="400"
+    android:viewportHeight="100">
+    
+    <!-- USA Flag Stripes Background Accent -->
+    <path
+        android:fillColor="#1E3A8A"
+        android:fillAlpha="0.25"
+        android:pathData="M0,0 L120,0 L80,100 L0,100 Z" />
+        
+    <path
+        android:fillColor="#EF4444"
+        android:fillAlpha="0.22"
+        android:pathData="M20,0 L38,0 L18,100 L0,100 Z" />
+    <path
+        android:fillColor="#EF4444"
+        android:fillAlpha="0.22"
+        android:pathData="M48,0 L66,0 L46,100 L28,100 Z" />
+    <path
+        android:fillColor="#EF4444"
+        android:fillAlpha="0.22"
+        android:pathData="M76,0 L94,0 L74,100 L56,100 Z" />
+        
+    <!-- USA Stars Cluster (Faint Vector) -->
+    <!-- Star 1 -->
+    <path
+        android:fillColor="#2563EB"
+        android:fillAlpha="0.50"
+        android:pathData="M18,12 L20,18 L26,18 L21,22 L23,28 L18,24 L13,28 L15,22 L10,18 L16,18 Z" />
+    <!-- Star 2 -->
+    <path
+        android:fillColor="#2563EB"
+        android:fillAlpha="0.45"
+        android:pathData="M45,15 L46.5,19.5 L51,19.5 L47.2,22.2 L48.7,26.7 L45,24 L41.3,26.7 L42.8,22.2 L39,19.5 L43.5,19.5 Z" />
+    <!-- Star 3 -->
+    <path
+        android:fillColor="#2563EB"
+        android:fillAlpha="0.45"
+        android:pathData="M25,45 L26.5,49.5 L31,49.5 L27.2,52.2 L28.7,56.7 L25,54 L21.3,56.7 L22.8,52.2 L19,49.5 L23.5,49.5 Z" />
+    <!-- Star 4 -->
+    <path
+        android:fillColor="#2563EB"
+        android:fillAlpha="0.40"
+        android:pathData="M60,40 L61.2,43.6 L65,43.6 L61.9,45.8 L63.1,49.4 L60,47.2 L56.9,49.4 L58.1,45.8 L55,43.6 L58.8,43.6 Z" />
+    <!-- Star 5 -->
+    <path
+        android:fillColor="#2563EB"
+        android:fillAlpha="0.40"
+        android:pathData="M380,18 L381.5,22.5 L386,22.5 L382.2,25.2 L383.7,29.7 L380,27 L376.3,29.7 L377.8,25.2 L374,22.5 L378.5,22.5 Z" />
+
+    <!-- USA Wall St / NYC Skyline Silhouette Vector Line Art -->
+    <path
+        android:fillColor="#334155"
+        android:fillAlpha="0.30"
+        android:pathData="M110,100 L110,70 L125,70 L125,50 L135,50 L135,35 L140,35 L140,25 L142,25 L142,15 L144,15 L144,25 L146,25 L146,35 L150,35 L150,50 L160,50 L160,100 Z" />
+        
+    <!-- Freedom Tower / Empire State silhouette -->
+    <path
+        android:fillColor="#2563EB"
+        android:fillAlpha="0.35"
+        android:pathData="M200,100 L200,60 L210,60 L210,40 L218,40 L218,20 L221,20 L221,5 L223,5 L223,20 L226,20 L226,40 L234,40 L234,60 L244,60 L244,100 Z" />
+
+    <!-- Statue of Liberty Silhouette Outline -->
+    <path
+        android:fillColor="#0D9488"
+        android:fillAlpha="0.40"
+        android:pathData="M310,100 L310,85 L305,80 L305,70 L308,65 L306,55 L308,50 L307,45 L310,38 L308,35 L310,32 L312,28 L314,20 L315,15 L316,20 L318,28 L320,32 L322,35 L320,38 L323,45 L322,50 L324,55 L322,65 L325,70 L325,80 L320,85 L320,100 Z" />
+
+    <!-- Torch flame accent -->
+    <path
+        android:fillColor="#D97706"
+        android:fillAlpha="0.55"
+        android:pathData="M315,12 C313,8 317,5 315,2 C318,5 319,8 315,12 Z" />
+
+    <!-- US Capitol Dome silhouette -->
+    <path
+        android:fillColor="#475569"
+        android:fillAlpha="0.30"
+        android:pathData="M260,100 L260,75 L265,75 L265,68 A15,15 0 0,1 295,68 L295,75 L300,75 L300,100 Z" />
+        
+    <!-- Horizontal Grid/Trendlines -->
+    <path
+        android:strokeColor="#3B82F6"
+        android:strokeWidth="1"
+        android:strokeAlpha="0.30"
+        android:pathData="M0,85 L400,85 M0,50 L400,50 M0,20 L400,20" />
+</vector>

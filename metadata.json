@@ -1,0 +1,8 @@
+{
+  "name": "Commoditybreak",
+  "description": "An AI-powered bot that analyzes MCX commodity tickers and executes live virtual trades.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "777263370542",
+    "project_id": "stockbreak-98d48",
+    "storage_bucket": "stockbreak-98d48.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:777263370542:android:d221a7e0755c0631d16abf",
+        "android_client_info": {
+          "package_name": "com.aistudio.stockanalysis.bxkjqw"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "777263370542-q05m0p176s3nttngqbamo1n6t5g06g2i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aistudio.stockanalysis.bxkjqw",
+            "certificate_hash": "b668967bc279a4f8b0577bed9801595bcacf603b"
+          }
+        },
+        {
+          "client_id": "777263370542-6f3cqhlm2f7jdu0a6v1nr3f0kd1sllmf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDO0Kfn9s1e8To1NjxCCSSdYWWgau_3C4A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "777263370542-6f3cqhlm2f7jdu0a6v1nr3f0kd1sllmf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
