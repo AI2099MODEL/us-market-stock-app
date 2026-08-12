@@ -93,7 +93,7 @@ object DhanPortfolioService {
         }
 
         // If API key is missing or call returned no data, provide fallback Dhan MCX & NSE portfolio
-        val demoHoldings = getFallbackDhanHoldings(todayStr)
+        val demoHoldings = emptyList<PortfolioHolding>()
         val msg = if (accessToken.isBlank() || accessToken == "MY_DHAN_ACCESS_TOKEN") {
             "Dhan API credentials not set. Loaded sample Dhan MCX & NSE portfolio holdings. Configure Client ID & Access Token in Settings to fetch your live Dhan portfolio."
         } else {
@@ -290,58 +290,5 @@ object DhanPortfolioService {
         return list
     }
 
-    private fun getFallbackDhanHoldings(todayStr: String): List<PortfolioHolding> {
-        return listOf(
-            PortfolioHolding(
-                symbol = "GOLDM",
-                quantity = 1.0,
-                buyPrice = 71250.0,
-                currentPrice = 72480.0,
-                previousClose = 71800.0,
-                purchaseDate = todayStr,
-                broker = "Dhan",
-                notes = "MCX Gold Mini Contract (Dhan HQ)"
-            ),
-            PortfolioHolding(
-                symbol = "CRUDEOIL",
-                quantity = 100.0,
-                buyPrice = 6480.0,
-                currentPrice = 6545.0,
-                previousClose = 6500.0,
-                purchaseDate = todayStr,
-                broker = "Dhan",
-                notes = "MCX Crude Oil Futures (Dhan HQ)"
-            ),
-            PortfolioHolding(
-                symbol = "SILVERM",
-                quantity = 5.0,
-                buyPrice = 83400.0,
-                currentPrice = 84200.0,
-                previousClose = 83800.0,
-                purchaseDate = todayStr,
-                broker = "Dhan",
-                notes = "MCX Silver Mini Contract (Dhan HQ)"
-            ),
-            PortfolioHolding(
-                symbol = "RELIANCE",
-                quantity = 25.0,
-                buyPrice = 2940.0,
-                currentPrice = 2985.0,
-                previousClose = 2950.0,
-                purchaseDate = todayStr,
-                broker = "Dhan",
-                notes = "NSE Equity Holding (Dhan HQ)"
-            ),
-            PortfolioHolding(
-                symbol = "NATURALGAS",
-                quantity = 1250.0,
-                buyPrice = 215.50,
-                currentPrice = 219.80,
-                previousClose = 216.00,
-                purchaseDate = todayStr,
-                broker = "Dhan",
-                notes = "MCX Natural Gas Futures (Dhan HQ)"
-            )
-        )
-    }
+    private fun getFallbackDhanHoldings(todayStr: String): List<PortfolioHolding> = emptyList()
 }
