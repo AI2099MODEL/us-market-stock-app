@@ -1,4 +1,4 @@
-package com.example
+code = """package com.example
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -51,7 +51,7 @@ object StockScanner {
                 price = price,
                 strategies = signals.joinToString(", "),
                 score = score,
-                reasons = "• " + reasons.joinToString("\n• "),
+                reasons = "• " + reasons.joinToString("\\n• "),
                 signalStrength = "STRONG COMMODITY BREAKOUT",
                 stopLoss = stopLoss,
                 target1 = target1,
@@ -78,3 +78,8 @@ object StockScanner {
         results.sortedByDescending { it.score }
     }
 }
+"""
+
+with open("app/src/main/java/com/example/StockScanner.kt", "w") as f:
+    f.write(code)
+

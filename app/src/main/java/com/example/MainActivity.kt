@@ -1928,10 +1928,7 @@ fun DashboardScreen(modifier: Modifier = Modifier, onSymbolSelected: (String) ->
                     ) {
                         val filters = listOf(
                             "ALL" to "All",
-                            "EQUITY" to "Top Stocks",
-                            "INDEX_OPTION" to "Index Opt",
-                            "STOCK_OPTION" to "Stock Opt",
-                            "COMMODITY" to "MCX"
+                            "COMMODITY" to "MCX Commodities"
                         )
                         filters.forEach { (typeKey, label) ->
                             val isSelected = selectedCategoryFilter == typeKey
