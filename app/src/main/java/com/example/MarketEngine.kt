@@ -12,6 +12,8 @@ import kotlin.math.min
 object MarketEngine {
     private const val TAG = "MarketEngine"
     const val MAX_CONCURRENT_TRADES = 3
+    const val MAX_DAILY_TRADES = 6 // Strict daily maximum trade limit to prevent overtrading & brokerage burn
+    const val MIN_TRADE_COOLDOWN_MS = 5 * 60 * 1000L // 5-minute minimum cooldown between new trade entries
     const val TOTAL_PORTFOLIO_CAPITAL = 150000.0 // ₹1,50,000 INR Total Portfolio Budget (1.5 Lakhs)
     const val INVESTED_RATIO = 1.0 // 100% active invested capital limit max
     const val TOTAL_INVESTED_CAPITAL = 150000.0 // ₹1,50,000 INR total active invested capital maximum
@@ -123,7 +125,7 @@ object MarketEngine {
             }
 
             while (isActive && isEngineRunning.value) {
-                delay(30000) // Run price updates and trade checks every 30 seconds
+                delay(60000) // Run price updates and trade checks every 60 seconds to avoid high frequency churn
                 try {
                     runEngineCycle(context)
                 } catch (e: Exception) {
@@ -278,14 +280,14 @@ object MarketEngine {
 
                         // Partial profit booking threshold (requires solid gain before booking 50% to maximize profit run)
                         val partialThreshold = if (isOptionTrade) {
-                            if (activeOptionsCount > 1) 3.0 else 4.0 // +3% to +4% option return (+0.75% to +1.0% underlying move = +$525 to +$700)
+                            if (activeOptionsCount > 1) 8.0 else 10.0 // +8% to +10% option return (+2.0% to +2.5% underlying move)
                         } else {
-                            2.5 // +2.5% equity gain (+$437.50 gross profit)
+                            5.0 // +5.0% equity gain
                         }
 
                         if (profitPct >= partialThreshold && !trade.isPartialBooked && trade.status == "ACTIVE") {
                             val partialProfit = (netProfitAmt / 2.0)
-                            val cushionPct = if (isOptionTrade) 0.005 else 0.005
+                            val cushionPct = 0.015 // 1.5% cushion
                             val safeSL = if (isPutOption) trade.entryPrice * (1.0 - cushionPct) else trade.entryPrice * (1.0 + cushionPct)
                             updatedTrade = updatedTrade.copy(
                                 isPartialBooked = true,
@@ -298,11 +300,11 @@ object MarketEngine {
 
                         var activeStopLoss = updatedTrade.stopLoss
 
-                        // Trailing Profit & Trailing Stop-Loss Engine Logic (Purely Technical & Percentage-Based)
-                        // 1. Breakeven Lock: Once underlying price moves +0.4% in favor (+0.3% for options), lock SL to entry price + fee cushion (0.15%)
-                        val breakevenGainPct = if (isOptionTrade) 0.3 else 0.4
+                        // Practical Trailing Profit & Trailing Stop-Loss Engine Logic (Prevents noise-triggered exits & brokerage burn)
+                        // 1. Breakeven Lock: Once underlying price moves +1.5% in favor (+1.2% for options), lock SL to entry price + solid fee cushion (0.35% to cover brokerage, STT & charges)
+                        val breakevenGainPct = if (isOptionTrade) 1.2 else 1.5
                         if (peakUnderlyingChangePct >= breakevenGainPct) {
-                            val feeCushionPct = 0.0015 // 0.15% to cover brokerage & slippage
+                            val feeCushionPct = 0.0035 // 0.35% cushion ensures net P&L after STT & brokerage is strictly non-negative
                             val breakevenSL = if (isPutOption) {
                                 trade.entryPrice * (1.0 - feeCushionPct)
                             } else {
@@ -311,10 +313,10 @@ object MarketEngine {
                             activeStopLoss = if (isPutOption) min(activeStopLoss, breakevenSL) else max(activeStopLoss, breakevenSL)
                         }
 
-                        // 2. Continuous Dynamic Trailing Profit (Trail SL 0.8% below peak highest price achieved for equity, 1.0% for options)
-                        val minTrailingGainPct = if (isOptionTrade) 0.5 else 0.6 // Activates after +0.5% / +0.6% gain
+                        // 2. Continuous Dynamic Trailing Profit (Trail SL 2.0% below peak highest price achieved for equity, 2.5% for options to absorb market noise)
+                        val minTrailingGainPct = if (isOptionTrade) 1.8 else 2.0 // Activates after +1.8% / +2.0% gain
                         if (peakUnderlyingChangePct >= minTrailingGainPct) {
-                            val trailDistance = if (isOptionTrade) 0.010 else 0.008
+                            val trailDistance = if (isOptionTrade) 0.025 else 0.020 // 2.5% for options, 2.0% for equity
                             val dynamicTrailingSL = if (isPutOption) {
                                 newHighest * (1.0 + trailDistance)
                             } else {
@@ -324,11 +326,11 @@ object MarketEngine {
                         }
 
                         // 3. Multi-Tier Percentage-Based Profit Lock (locks incremental percentage gains as price progresses)
-                        if (peakUnderlyingChangePct >= 1.0) {
+                        if (peakUnderlyingChangePct >= 2.5) {
                             val lockedGainPct = when {
-                                peakUnderlyingChangePct >= 3.0 -> peakUnderlyingChangePct - 1.0 // Lock 2.0% profit gain
-                                peakUnderlyingChangePct >= 2.0 -> peakUnderlyingChangePct - 0.8 // Lock 1.2% profit gain
-                                else -> 0.5 // Lock 0.5% profit gain
+                                peakUnderlyingChangePct >= 6.0 -> peakUnderlyingChangePct - 2.0 // Lock 4.0% profit gain
+                                peakUnderlyingChangePct >= 4.0 -> peakUnderlyingChangePct - 1.8 // Lock 2.2% profit gain
+                                else -> 1.0 // Lock 1.0% profit gain
                             }
                             
                             val percentageLockedSL = if (isPutOption) {
@@ -486,13 +488,26 @@ object MarketEngine {
         }
 
         val currentActive = db.virtualTradeDao().getActiveTrades()
-        // 3. Enable automated trade entry for AI signals and testing across all instruments as requested
-        val canEnter = !isDailyRiskCapHit && (timeInMinutes < 1410 || isSimulationMode.value)
+        val todayStr = sdf.format(Date())
+        val todayTradesCount = allTradesList.count { it.entryTime > 0 && sdf.format(Date(it.entryTime)) == todayStr }
+        val lastTradeEntryTime = allTradesList.maxOfOrNull { it.entryTime } ?: 0L
+        val timeSinceLastEntryMs = System.currentTimeMillis() - lastTradeEntryTime
 
-        
+        val isDailyTradeLimitReached = todayTradesCount >= MAX_DAILY_TRADES
+        val isCooldownActive = timeSinceLastEntryMs < MIN_TRADE_COOLDOWN_MS
+
+        val canEnter = !isDailyRiskCapHit && !isDailyTradeLimitReached && !isCooldownActive && (timeInMinutes < 1410 || isSimulationMode.value)
+
+        if (isDailyTradeLimitReached) {
+            addLog("🛡️ Max Daily Trade Limit Reached ($todayTradesCount/$MAX_DAILY_TRADES trades executed today). New entries paused to prevent overtrading & brokerage burn.")
+        } else if (isCooldownActive && currentActive.size < MAX_CONCURRENT_TRADES) {
+            val remainSec = (MIN_TRADE_COOLDOWN_MS - timeSinceLastEntryMs) / 1000
+            addLog("⏳ Trade Entry Cooldown Active (${remainSec}s remaining). Waiting for high-conviction setup.")
+        }
+
         if (canEnter) {
             val emptySlots = MAX_CONCURRENT_TRADES - currentActive.size
-            addLog("Slots available: $emptySlots. Analyzing backend market sentiment & starting high-conviction breakout scanner...")
+            addLog("Slots available: $emptySlots ($todayTradesCount/$MAX_DAILY_TRADES trades executed today). Analyzing market sentiment & breakout scanner...")
             isScanning.value = true
             try {
                 // 1. Evaluate Indian Commodity Market Sentiment from Gold & Crude Oil via Dhan API
@@ -510,14 +525,14 @@ object MarketEngine {
 
                 addLog("🌐 MCX Commodity Market Sentiment (Dhan API): $sentimentTag")
 
-                // 2. Fetch Indian commodity tickers for high quality candidates (score >= 65)
+                // 2. Fetch Indian commodity tickers for high quality candidates (score >= 75)
                 val scanTickers = StockScanner.COMMODITY_SCAN_TICKERS
                 val breakoutCandidates = mutableListOf<ScanResult>()
 
                 scanTickers.map { ticker ->
                     async {
                         val res = StockScanner.analyzeStock(ticker, "Breakouts", requireBullish = false)
-                        if (res != null && res.score >= 55) {
+                        if (res != null && res.score >= 75) {
                             breakoutCandidates.add(res)
                         }
                     }
@@ -584,8 +599,25 @@ object MarketEngine {
                         if (existingTrade != null) {
                             val newAlloc = existingTrade.allocatedAmount + ALLOCATION_PER_TRADE
                             val avgEntry = ((existingTrade.entryPrice * existingTrade.allocatedAmount) + (candidate.price * ALLOCATION_PER_TRADE)) / newAlloc
-                            val targetPrice = if (isBtstTrade) avgEntry * 1.010 else if (isPutOptionTrade) avgEntry * 0.920 else if (isOptionTrade) avgEntry * 1.080 else avgEntry * 1.035
-                            val stopLossPrice = if (isBtstTrade) avgEntry * 0.994 else if (isPutOptionTrade) avgEntry * 1.015 else if (isOptionTrade) avgEntry * 0.985 else avgEntry * 0.988
+                            val targetPrice = if (isBtstTrade) {
+                                if (isPutOptionTrade) avgEntry * 0.972 else avgEntry * 1.028
+                            } else if (isPutOptionTrade) {
+                                avgEntry * 0.820
+                            } else if (isOptionTrade) {
+                                avgEntry * 1.180
+                            } else {
+                                avgEntry * 1.065
+                            }
+
+                            val stopLossPrice = if (isBtstTrade) {
+                                if (isPutOptionTrade) avgEntry * 1.022 else avgEntry * 0.978
+                            } else if (isPutOptionTrade) {
+                                avgEntry * 1.045
+                            } else if (isOptionTrade) {
+                                avgEntry * 0.955
+                            } else {
+                                avgEntry * 0.972
+                            }
 
                             val averagedTrade = existingTrade.copy(
                                 entryPrice = avgEntry,
@@ -598,8 +630,25 @@ object MarketEngine {
                             SupabaseSyncManager.publishTrade(averagedTrade)
                             addLog("🔄 Averaged Out Position: $optimalTicker at ₹${String.format("%.2f", candidate.price)} | New Avg Entry: ₹${String.format("%.2f", avgEntry)} (Total Allocated: ₹${String.format("%,.0f", newAlloc)})")
                         } else if (currentActive.size < MAX_CONCURRENT_TRADES && (currentActive.sumOf { it.allocatedAmount } + ALLOCATION_PER_TRADE) <= TOTAL_INVESTED_CAPITAL) {
-                            val targetPrice = if (isBtstTrade) candidate.price * 1.010 else if (isPutOptionTrade) candidate.price * 0.920 else if (isOptionTrade) candidate.price * 1.080 else candidate.price * 1.035
-                            val stopLossPrice = if (isBtstTrade) candidate.price * 0.994 else if (isPutOptionTrade) candidate.price * 1.015 else if (isOptionTrade) candidate.price * 0.985 else candidate.price * 0.988
+                            val targetPrice = if (isBtstTrade) {
+                                if (isPutOptionTrade) candidate.price * 0.972 else candidate.price * 1.028
+                            } else if (isPutOptionTrade) {
+                                candidate.price * 0.820
+                            } else if (isOptionTrade) {
+                                candidate.price * 1.180
+                            } else {
+                                candidate.price * 1.065
+                            }
+
+                            val stopLossPrice = if (isBtstTrade) {
+                                if (isPutOptionTrade) candidate.price * 1.022 else candidate.price * 0.978
+                            } else if (isPutOptionTrade) {
+                                candidate.price * 1.045
+                            } else if (isOptionTrade) {
+                                candidate.price * 0.955
+                            } else {
+                                candidate.price * 0.972
+                            }
 
                             val trade = VirtualTrade(
                                 ticker = optimalTicker,

@@ -52,19 +52,8 @@ fun AutoTraderTabContent(modifier: Modifier = Modifier) {
     var marketTimeText by remember { mutableStateOf(getMarketCloseCountdownText()) }
 
     LaunchedEffect(Unit) {
-        var cycleCounter = 0
         while (isActive) {
             marketTimeText = getMarketCloseCountdownText()
-            if (cycleCounter % 15 == 0) { // Execute engine cycle every 15 seconds instead of every 1 second
-                try {
-                    withContext(Dispatchers.IO) {
-                        MarketEngine.runEngineCycle(context)
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-            cycleCounter++
             delay(1000) // Update countdown timer every second
         }
     }
@@ -97,6 +86,45 @@ fun AutoTraderTabContent(modifier: Modifier = Modifier) {
         // Cloud Sync Status Card (Supabase PostgreSQL)
         item {
             SupabaseCloudSyncCard()
+        }
+
+        // Practical Risk & Brokerage Protection Banner
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4)),
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, Color(0xFFBBF7D0))
+            ) {
+                Column(
+                    modifier = Modifier.padding(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Shield,
+                            contentDescription = null,
+                            tint = Color(0xFF16A34A),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = "Practical Risk & Brokerage Protection Active",
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF15803D)
+                        )
+                    }
+                    Text(
+                        text = "• Max Daily Trades: 6 Capped (Prevents brokerage & STT burn)\n• Trailing SL Buffer: 2.0% - 2.5% (Absorbs noise before exiting)\n• Breakeven Cushion: +0.35% (Ensures STT & charges are covered)\n• Targets: +18% Options / +6.5% Futures (High Risk-Reward)",
+                        fontSize = 10.sp,
+                        color = Color(0xFF166534),
+                        lineHeight = 14.sp
+                    )
+                }
+            }
         }
 
         // Dhan WebSocket Connection Debugger

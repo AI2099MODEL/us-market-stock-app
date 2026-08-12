@@ -744,8 +744,8 @@ fun LiveScreen(modifier: Modifier = Modifier, initialSymbol: String? = null, for
                                             entryPrice = avgEntry,
                                             currentPrice = cmp,
                                             allocatedAmount = newAlloc,
-                                            targetPrice = avgEntry * 1.05,
-                                            stopLoss = avgEntry * 0.98
+                                            targetPrice = avgEntry * 1.065,
+                                            stopLoss = avgEntry * 0.972
                                         )
                                         db.virtualTradeDao().updateTrade(averaged)
                                     } else {
@@ -756,9 +756,9 @@ fun LiveScreen(modifier: Modifier = Modifier, initialSymbol: String? = null, for
                                             currentPrice = cmp,
                                             entryTime = System.currentTimeMillis(),
                                             status = "ACTIVE",
-                                            targetPrice = cmp * 1.05,
-                                            trailingSLThreshold = cmp * 0.01,
-                                            stopLoss = cmp * 0.98,
+                                            targetPrice = cmp * 1.065,
+                                            trailingSLThreshold = cmp * 0.020,
+                                            stopLoss = cmp * 0.972,
                                             highestPrice = cmp,
                                             allocatedAmount = 5000.0,
                                             isBtst = false
