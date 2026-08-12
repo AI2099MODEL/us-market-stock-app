@@ -119,10 +119,24 @@ object ShoonyaWebSocketManager {
     private fun parseTickText(text: String) {
         try {
             val json = JSONObject(text)
-            // Example Shoonya Tick: {"t":"tf","e":"MCX","tk":"253456","lp":"75400.00","pc":"-0.5"}
+            // Example Shoonya Tick: {"t":"tf","e":"MCX","tk":"253456","ts":"GOLDM23OCTFUT","lp":"75400.00","pc":"-0.5"}
             val exchange = json.optString("e")
+            val token = json.optString("tk")
+            val ts = json.optString("ts") // Sometimes provided
+            
             val ltp = json.optString("lp").toDoubleOrNull() ?: json.optString("bp1").toDoubleOrNull()
-            // We would map tk back to symbols here.
+            val changeStr = json.optString("pc")
+            
+            if (ltp != null && ts.isNotEmpty()) {
+                val currentQuotes = _liveQuotes.value.toMutableMap()
+                val existing = currentQuotes[ts]
+                if (existing != null) {
+                    currentQuotes[ts] = existing.copy(price = ltp, change = changeStr.toDoubleOrNull() ?: existing.change)
+                } else {
+                    currentQuotes[ts] = CommodityQuote(ts, ts, ltp, changeStr.toDoubleOrNull() ?: 0.0, 0.0, 0.0, 0.0, 0, "SHOONYA")
+                }
+                _liveQuotes.value = currentQuotes
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -140,18 +154,22 @@ object ShoonyaWebSocketManager {
             }
 
             while (isActive) {
-                delay(5000) // Live tick updates from Shoonya & Exchange feed
+                delay(5000) // Live tick updates from fallback feed
                 _tickCount.value += 1
-                _lastHeartbeat.value = System.currentTimeMillis()
-                if (!_connectionStatus.value.contains("CONNECTED")) {
+                
+                if (!isConnected) {
                     _connectionStatus.value = "STREAMING (LIVE TICK FEED)"
-                }
-                try {
-                    val freshQuotes = IndianCommodityRepository.fetchAllCommodityQuotes()
-                    val map = freshQuotes.associateBy { it.symbol }
-                    _liveQuotes.value = map
-                } catch (e: Exception) {
-                    e.printStackTrace()
+                    try {
+                        val freshQuotes = IndianCommodityRepository.fetchAllCommodityQuotes()
+                        val map = freshQuotes.associateBy { it.symbol }
+                        _liveQuotes.value = map
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                } else {
+                    // We are connected to real Shoonya WebSocket. 
+                    // Let the real websocket `parseTickText` handle the _liveQuotes updates.
+                    _lastHeartbeat.value = System.currentTimeMillis()
                 }
             }
         }
