@@ -1264,7 +1264,7 @@ fun StockBreakoutCard(
     val stopLossVal = res.stopLoss ?: (res.price * 0.95)
     val stopLossPct = if (res.price > 0) ((res.price - stopLossVal) / res.price) * 100 else 5.0
     val formattedStopLossPct = String.format(Locale.US, "%.1f", stopLossPct)
-    val formattedPrice = "₹" + String.format(Locale.US, "%.2f", res.price) + " (Live)"
+    val formattedPrice = "₹" + String.format(Locale.US, "%.2f", res.price)
 
     val morningOpen = res.openPrice ?: res.previousClose ?: res.price
     val isBelowMorningOpen = res.price < morningOpen
@@ -1425,20 +1425,31 @@ fun StockBreakoutCard(
                 Column(
                     horizontalAlignment = Alignment.End
                 ) {
+                    horizontalAlignment = Alignment.End
+                ) {
                     val sign = if (changePct > 0) "+" else ""
                     Text(
-                        text = "$sign${String.format(Locale.US, "%.2f", changePct)}%",
-                        fontSize = 9.sp,
+                        text = "Shoonya Live",
+                        fontSize = 7.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (changePct >= 0) TrendTextGreen else StopLossRedText
+                        color = Color(0xFF10B981)
                     )
-                    Text(
-                        text = formattedPrice,
-                        fontSize = 11.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = cmpColor,
-                        maxLines = 1
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = "$sign${String.format(Locale.US, "%.2f", changePct)}%",
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (changePct >= 0) TrendTextGreen else StopLossRedText
+                        )
+                        Text(
+                            text = formattedPrice,
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = cmpColor,
+                            maxLines = 1
+                        )
+                    }
+                }
                 }
             }
 
