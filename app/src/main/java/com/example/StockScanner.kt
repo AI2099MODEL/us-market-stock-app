@@ -130,79 +130,13 @@ object StockScanner {
     suspend fun scanMultiple(category: String = "Breakouts"): List<ScanResult> = withContext(Dispatchers.IO) {
         val results = mutableListOf<ScanResult>()
 
-        // 1. Commodity Scans
+        // 1. Commodity Scans (Uses Dhan Live Prices)
         val deferreds = COMMODITY_SCAN_TICKERS.map { ticker ->
             async { analyzeStock(ticker, category, requireBullish = false) }
         }
         results.addAll(deferreds.awaitAll().filterNotNull())
 
-        // 2. Index Options Scans
-        INDEX_OPTIONS_PRESETS.forEach { (symbol, name, underlyingSpot) ->
-            val optionPremium = when {
-                symbol.contains("NIFTY") && !symbol.contains("BANK") && !symbol.contains("FIN") -> 148.5
-                symbol.contains("BANKNIFTY") -> 310.0
-                symbol.contains("FINNIFTY") -> 92.0
-                else -> 125.0
-            }
-            val isCall = symbol.contains("CE")
-            val target1 = optionPremium * 1.20 // +20% Option Gain Target 1
-            val target2 = optionPremium * 1.40 // +40% Option Gain Target 2
-            val stopLoss = optionPremium * 0.88 // -12% Option Premium Stop Loss
-
-            results.add(
-                ScanResult(
-                    ticker = symbol,
-                    name = name,
-                    price = optionPremium,
-                    strategies = "RSI > 65, 20-Day Resistance Breakout, ATM Volume Spike",
-                    score = if (isCall) 92 else 88,
-                    reasons = "• Underlying spot trading at ₹${String.format("%,.1f", underlyingSpot)} above resistance\n• High Option Call/Put Ratio momentum build-up",
-                    signalStrength = if (isCall) "STRONG INDEX CALL BREAKOUT" else "STRONG INDEX PUT BREAKDOWN",
-                    stopLoss = stopLoss,
-                    target1 = target1,
-                    target2 = target2,
-                    change = optionPremium * 0.12,
-                    changePercent = 12.0,
-                    isBtst = false,
-                    assetType = "INDEX_OPTION"
-                )
-            )
-        }
-
-        // 3. Stock Options Scans
-        STOCK_OPTIONS_PRESETS.forEach { (symbol, name, underlyingSpot) ->
-            val optionPremium = when {
-                symbol.contains("RELIANCE") -> 48.0
-                symbol.contains("TCS") -> 65.0
-                symbol.contains("INFY") -> 32.0
-                else -> 22.5
-            }
-            val isCall = symbol.contains("CE")
-            val target1 = optionPremium * 1.20 // +20% Option Premium Target 1
-            val target2 = optionPremium * 1.40 // +40% Option Premium Target 2
-            val stopLoss = optionPremium * 0.88 // -12% Option Premium Stop Loss
-
-            results.add(
-                ScanResult(
-                    ticker = symbol,
-                    name = name,
-                    price = optionPremium,
-                    strategies = "SuperTrend Bullish, Option Open Interest Spike",
-                    score = 86,
-                    reasons = "• Stock spot price at ₹${String.format("%,.1f", underlyingSpot)} breaking 50-Day SMA\n• Substantial delivery accumulation & ATM CE volume",
-                    signalStrength = if (isCall) "STRONG STOCK CALL BREAKOUT" else "STRONG STOCK PUT BREAKDOWN",
-                    stopLoss = stopLoss,
-                    target1 = target1,
-                    target2 = target2,
-                    change = optionPremium * 0.08,
-                    changePercent = 8.0,
-                    isBtst = false,
-                    assetType = "STOCK_OPTION"
-                )
-            )
-        }
-
-        // 4. Top 5 Morning Breakout Equity Stocks (High Relative Volume RVOL > 2.5x & BTST Weekly)
+        // Top 5 Morning Breakout Equity Stocks (High Relative Volume RVOL > 2.5x & BTST Weekly)
         TOP_5_MORNING_BREAKOUT_STOCKS.forEach { preset ->
             val stopLoss = preset.price * 0.982 // -1.8% Stop Loss
             val target1 = preset.price * 1.035 // +3.5% Target 1
