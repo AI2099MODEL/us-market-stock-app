@@ -284,14 +284,18 @@ object IndianCommodityRepository {
                     ?: (dataMap["tradedVolume"] as? Number)?.toLong() ?: 0L
 
                 if (price > 0.0) {
+                    val finalPrice = if (isMini) price / 10.0 else price
+                    val finalChange = if (isMini) change / 10.0 else change
+                    val finalHigh = if (isMini) high / 10.0 else high
+                    val finalLow = if (isMini) low / 10.0 else low
                     return@withContext CommodityQuote(
                         symbol = symbolKey.uppercase(),
                         name = name,
-                        price = price,
-                        change = change,
+                        price = finalPrice,
+                        change = finalChange,
                         changePercent = changePct,
-                        high = high,
-                        low = low,
+                        high = finalHigh,
+                        low = finalLow,
                         volume = volume,
                         source = "DHAN_API"
                     )
@@ -387,14 +391,18 @@ object IndianCommodityRepository {
             val volume = if (volumes.isNotEmpty()) volumes.sum() else 75000L
 
             if (inrPrice > 0.0) {
+                val finalPrice = if (isMini) inrPrice / 10.0 else inrPrice
+                val finalChange = if (isMini) change / 10.0 else change
+                val finalHigh = if (isMini) high / 10.0 else high
+                val finalLow = if (isMini) low / 10.0 else low
                 return@withContext CommodityQuote(
                     symbol = symbolKey.uppercase(),
                     name = name,
-                    price = inrPrice,
-                    change = change,
+                    price = finalPrice,
+                    change = finalChange,
                     changePercent = changePct,
-                    high = maxOf(high, inrPrice),
-                    low = minOf(low, inrPrice),
+                    high = maxOf(finalHigh, finalPrice),
+                    low = minOf(finalLow, finalPrice),
                     volume = volume,
                     source = "MCX_INR_FEED"
                 )
@@ -415,14 +423,15 @@ object IndianCommodityRepository {
             "NICKEL" -> 1480.0
             else -> 1000.0
         }
+        val finalBaseline = if (isMini) baselinePrice / 10.0 else baselinePrice
         return@withContext CommodityQuote(
             symbol = symbolKey.uppercase(),
             name = name,
-            price = baselinePrice,
-            change = baselinePrice * 0.005,
+            price = finalBaseline,
+            change = finalBaseline * 0.005,
             changePercent = 0.5,
-            high = baselinePrice * 1.01,
-            low = baselinePrice * 0.99,
+            high = finalBaseline * 1.01,
+            low = finalBaseline * 0.99,
             volume = 50000L,
             source = "MCX_BASELINE"
         )
