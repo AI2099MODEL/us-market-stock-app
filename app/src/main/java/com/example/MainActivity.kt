@@ -1173,98 +1173,17 @@ object InterstitialAdManager {
 
 fun loadAndShowAppOpenAd(
     activity: android.app.Activity,
-    adUnitId: String = "ca-app-pub-8815300826143812/8477882080"
+    adUnitId: String = ""
 ) {
-    val adRequest = buildNonPersonalizedAdRequest()
-    AppOpenAd.load(
-        activity,
-        adUnitId,
-        adRequest,
-        object : AppOpenAd.AppOpenAdLoadCallback() {
-            override fun onAdLoaded(appOpenAd: AppOpenAd) {
-                appOpenAd.fullScreenContentCallback = object : com.google.android.gms.ads.FullScreenContentCallback() {
-                    override fun onAdShowedFullScreenContent() {
-                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                            try {
-                                if (!activity.isFinishing && !activity.isDestroyed) {
-                                    val intent = android.content.Intent(activity, activity::class.java).apply {
-                                        addFlags(android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
-                                        addFlags(android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                                    }
-                                    activity.startActivity(intent)
-                                }
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
-                        }, 3000)
-                    }
-                }
-                appOpenAd.show(activity)
-            }
-
-            override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                // Fallback to official Google App Open Test Ad Unit ID if custom ad unit returns no fill during testing
-                if (adUnitId != "ca-app-pub-3940256099942544/9257395921") {
-                    loadAndShowAppOpenAd(activity, "ca-app-pub-3940256099942544/9257395921")
-                }
-            }
-        }
-    )
+    // Ads removed as requested
 }
 
 object RewardedVideoAdManager {
-    private var mRewardedAd: RewardedAd? = null
-    private var isLoading = false
-
-    fun loadAd(context: Context, adUnitId: String = "ca-app-pub-8815300826143812/6614437392") {
-        if (mRewardedAd != null || isLoading) return
-        isLoading = true
-        val adRequest = buildNonPersonalizedAdRequest()
-        RewardedAd.load(
-            context,
-            adUnitId,
-            adRequest,
-            object : RewardedAdLoadCallback() {
-                override fun onAdLoaded(rewardedAd: RewardedAd) {
-                    mRewardedAd = rewardedAd
-                    isLoading = false
-                }
-
-                override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                    mRewardedAd = null
-                    isLoading = false
-                    if (adUnitId != "ca-app-pub-3940256099942544/5224354917") {
-                        loadAd(context, "ca-app-pub-3940256099942544/5224354917")
-                    }
-                }
-            }
-        )
-    }
+    fun loadAd(context: Context, adUnitId: String = "") {}
 
     fun showAd(context: Context, onUserEarnedReward: () -> Unit = {}, onAdDismissed: () -> Unit = {}) {
-        val activity = context as? android.app.Activity
-        if (mRewardedAd != null && activity != null) {
-            mRewardedAd?.fullScreenContentCallback = object : FullScreenContentCallback() {
-                override fun onAdDismissedFullScreenContent() {
-                    mRewardedAd = null
-                    loadAd(context)
-                    onAdDismissed()
-                }
-
-                override fun onAdFailedToShowFullScreenContent(adError: AdError) {
-                    mRewardedAd = null
-                    onAdDismissed()
-                }
-            }
-            mRewardedAd?.show(activity) { rewardItem ->
-                Toast.makeText(context, "Reward Granted!", Toast.LENGTH_SHORT).show()
-                onUserEarnedReward()
-            }
-        } else {
-            onUserEarnedReward()
-            onAdDismissed()
-            loadAd(context)
-        }
+        onUserEarnedReward()
+        onAdDismissed()
     }
 }
 
@@ -1357,9 +1276,7 @@ fun StockBreakoutCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable {
-                RewardedVideoAdManager.showAd(context, onUserEarnedReward = {
-                    onSymbolSelected(res.ticker)
-                })
+                onSymbolSelected(res.ticker)
             },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -2197,21 +2114,6 @@ fun PremiumScreen(
     modifier: Modifier = Modifier,
     onSymbolSelected: (String) -> Unit = {}
 ) {
-    val context = LocalContext.current
-    var hasTriggeredAd by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        if (!hasTriggeredAd) {
-            hasTriggeredAd = true
-            RewardedVideoAdManager.showAd(
-                context = context,
-                onUserEarnedReward = {
-                    Toast.makeText(context, "🎉 Premium Portfolio Access Granted!", Toast.LENGTH_SHORT).show()
-                }
-            )
-        }
-    }
-
     Box(modifier = modifier.fillMaxSize()) {
         LiveScreen(initialSymbol = "", forceMode = 0)
     }
