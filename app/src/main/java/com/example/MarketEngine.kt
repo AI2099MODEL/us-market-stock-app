@@ -231,7 +231,7 @@ object MarketEngine {
 
         val isWeekday = dayOfWeek != Calendar.SATURDAY && dayOfWeek != Calendar.SUNDAY
         val isHoliday = MarketUtils.isMarketHoliday(cal)
-        val isMarketHours = isSimulationMode.value || (isWeekday && !isHoliday && (timeInMinutes in 555..1410)) // 9:15 AM - 11:30 PM IST (Market & Options Open at 9:15 AM IST)
+        val isMarketHours = isSimulationMode.value || (isWeekday && !isHoliday && (timeInMinutes in 555..1410)) // 9:15 AM - 11:30 PM IST (MCX Market Open at 9:00 AM IST)
 
         // Market Close Prep Windows: Last 45 mins (10:45 PM - 11:30 PM) & Last 5 mins (11:25 PM - 11:30 PM)
         val isLast45Mins = (timeInMinutes in 1365..1410)
@@ -262,7 +262,7 @@ object MarketEngine {
             return@withContext
         }
 
-        val windowTag = if (isLast5Mins) " [FINAL 5-MIN OPTION CLOSE WINDOW]" else if (isLast45Mins) " [LAST 45-MIN BTST SHIFT WINDOW]" else ""
+        val windowTag = if (isLast5Mins) " [FINAL 5-MIN MARKET CLOSE WINDOW]" else if (isLast45Mins) " [LAST 45-MIN BTST SHIFT WINDOW]" else ""
         addLog("Cycle active$windowTag. Time: IST ${String.format("%02d:%02d", hour, minute)}. Active trades check...")
 
         // 1. Update prices of existing ACTIVE trades
@@ -303,11 +303,7 @@ object MarketEngine {
                         val activeOptionsCount = refreshedActiveTrades.count { it.name.contains("Option") || it.ticker.contains("CE") || it.ticker.contains("PE") }
 
                         // Partial profit booking threshold (requires solid gain before booking 50% to maximize profit run)
-                        val partialThreshold = if (isOptionTrade) {
-                            if (activeOptionsCount > 1) 8.0 else 10.0 // +8% to +10% option return
-                        } else {
-                            5.0 // +5.0% equity gain
-                        }
+                        val partialThreshold = 6.0 // +6.0% MCX commodity return
 
                         if (profitPct >= partialThreshold && !trade.isPartialBooked && trade.status == "ACTIVE") {
                             val partialProfit = (netProfitAmt / 2.0)
@@ -318,15 +314,14 @@ object MarketEngine {
                                 stopLoss = if (isShort) minOf(trade.stopLoss, safeSL) else maxOf(trade.stopLoss, safeSL),
                                 profitAmount = netProfitAmt
                             )
-                            val optionTag = if (isOptionTrade && activeOptionsCount > 1) " [Multi-Option ($activeOptionsCount active)]" else ""
-                            addLog("✂️ PARTIAL PROFIT BOOKED (50% qty) on ${trade.ticker}$optionTag at +${String.format("%.2f", profitPct)}% (+₹${String.format("%.2f", partialProfit)} INR net). SL secured with profit cushion.")
+                            addLog("✂️ PARTIAL PROFIT BOOKED (50% qty) on ${trade.ticker} at +${String.format("%.2f", profitPct)}% (+₹${String.format("%.2f", partialProfit)} INR net). SL secured with profit cushion.")
                         }
 
                         var activeStopLoss = updatedTrade.stopLoss
 
                         // Practical Trailing Profit & Trailing Stop-Loss Engine Logic (Prevents noise-triggered exits & brokerage burn)
                         // 1. Breakeven Lock: Once underlying price moves +1.5% in favor (+1.2% for options), lock SL to entry price + solid fee cushion (0.35% to cover brokerage, STT & charges)
-                        val breakevenGainPct = if (isOptionTrade) 1.2 else 1.5
+                        val breakevenGainPct = 1.5
                         if (peakUnderlyingChangePct >= breakevenGainPct) {
                             val feeCushionPct = 0.0035 // 0.35% cushion ensures net P&L after STT & brokerage is strictly non-negative
                             val breakevenSL = trade.entryPrice * (if (isShort) (1.0 - feeCushionPct) else (1.0 + feeCushionPct))
@@ -334,9 +329,9 @@ object MarketEngine {
                         }
 
                         // 2. Continuous Dynamic Trailing Profit (Trail SL 2.0% below peak highest price achieved for equity, 2.5% for options to absorb market noise)
-                        val minTrailingGainPct = if (isOptionTrade) 1.8 else 2.0 // Activates after +1.8% / +2.0% gain
+                        val minTrailingGainPct = 2.0 // Activates after +2.0% gain
                         if (peakUnderlyingChangePct >= minTrailingGainPct) {
-                            val trailDistance = if (isOptionTrade) 0.025 else 0.020 // 2.5% for options, 2.0% for equity
+                            val trailDistance = 0.020 // 2.0% for commodity
                             val dynamicTrailingSL = newHighest * (if (isShort) (1.0 + trailDistance) else (1.0 - trailDistance))
                             activeStopLoss = if (isShort) minOf(activeStopLoss, dynamicTrailingSL) else maxOf(activeStopLoss, dynamicTrailingSL)
                         }
@@ -363,30 +358,7 @@ object MarketEngine {
 
                         updatedTrade = updatedTrade.copy(stopLoss = activeStopLoss)
 
-                        // Special Market Close Prep Rules (Last 45 mins: book options in profit; Last 5 mins: close ALL options)
-                        if (isOptionTrade && trade.status == "ACTIVE") {
-                            if (isLast5Mins) {
-                                updatedTrade = updatedTrade.copy(
-                                    status = "SQUARED_OFF",
-                                    exitPrice = currentPrice,
-                                    exitTime = System.currentTimeMillis()
-                                )
-                                db.virtualTradeDao().updateTrade(updatedTrade)
-                                SupabaseSyncManager.publishTrade(updatedTrade)
-                                addLog("⏰ Final 5-Min Market Close Rule: Auto squared off Option on ${trade.ticker} at ₹${String.format("%.2f", currentPrice)} (Net P&L: ₹${String.format("%.2f", netProfitAmt)} INR) to eliminate overnight decay risk.")
-                                return@async
-                            } else if (isLast45Mins && netProfitAmt > 0.0) {
-                                updatedTrade = updatedTrade.copy(
-                                    status = "PROFIT_BOOKED",
-                                    exitPrice = currentPrice,
-                                    exitTime = System.currentTimeMillis()
-                                )
-                                db.virtualTradeDao().updateTrade(updatedTrade)
-                                SupabaseSyncManager.publishTrade(updatedTrade)
-                                addLog("💰 45-Min Market Close Rule: Booked Option Profit on ${trade.ticker} at +${String.format("%.2f", profitPct)}% (+₹${String.format("%.2f", netProfitAmt)} INR net). Moving capital over to BTST Equity.")
-                                return@async
-                            }
-                        }
+
 
                         // Check Exit Conditions (BTST: next-day morning sale at 0.5%-1.0% minimum target; Intraday: standard target)
                         val targetReached = if (trade.isBtst) {
@@ -495,16 +467,13 @@ object MarketEngine {
         }
 
         val currentActive = db.virtualTradeDao().getActiveTrades()
-        val activeOptionTrades = currentActive.filter { it.name.contains("Option") || it.ticker.contains("CE") || it.ticker.contains("PE") }
-        val activeOptionCapital = activeOptionTrades.sumOf { it.allocatedAmount }
-
-        val activeCommodityTrades = currentActive.filter { !it.name.contains("Option") && !it.ticker.contains("CE") && !it.ticker.contains("PE") }
-        val activeCommodityCapital = activeCommodityTrades.sumOf { it.allocatedAmount }
+        val activeCommodityTrades = currentActive
+        val activeCommodityCapital = currentActive.sumOf { it.allocatedAmount }
 
         val canEnter = !isDailyRiskCapHit && (timeInMinutes < 1410 || isSimulationMode.value)
 
         if (canEnter) {
-            addLog("Active Allocations: Options (${activeOptionTrades.size}/2 slots, ₹${String.format("%,.0f", activeOptionCapital)}/₹2,00,000 Cap) | MCX Commodities (${activeCommodityTrades.size}/2 slots, ₹${String.format("%,.0f", activeCommodityCapital)}/₹2,00,000 Cap)")
+            addLog("Active Allocations: MCX Commodities (${currentActive.size}/2 slots, ₹${String.format("%,.0f", activeCommodityCapital)}/₹2,00,000 Cap)")
             isScanning.value = true
             try {
                 // 1. Evaluate Indian Commodity Market Sentiment from Gold & Crude Oil via Dhan API
@@ -522,11 +491,11 @@ object MarketEngine {
 
                 addLog("🌐 MCX Commodity Market Sentiment (Dhan API): $sentimentTag")
 
-                // 2. Fetch Index Options, Stock Options & Commodity Breakout candidates (score >= 75)
+                // 2. Fetch MCX Commodity Breakout candidates (score >= 75)
                 val breakoutCandidates = StockScanner.scanMultiple("Breakouts")
                     .filter { it.score >= 75 }
 
-                // Save breakout candidates (Indices, Stocks Options & Commodities) to database
+                // Save breakout candidates to database
                 if (breakoutCandidates.isNotEmpty()) {
                     val dbBreakouts = breakoutCandidates.map { candidate ->
                         ScannedBreakout(
