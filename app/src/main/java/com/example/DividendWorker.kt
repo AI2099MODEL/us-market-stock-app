@@ -24,7 +24,12 @@ class DividendWorker(
         val tomorrowDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         val tomorrowDateString = tomorrowDateFormat.format(today.time)
 
-        MASTER_DIVIDEND_LIST.forEach { dividend ->
+        LiveDividendManager.initialize(applicationContext)
+        LiveDividendManager.fetchLiveDividendsFromInternet(applicationContext)
+
+        val activeList = LiveDividendManager.liveDividends.value.ifEmpty { MASTER_DIVIDEND_LIST }
+
+        activeList.forEach { dividend ->
             if (dividend.exDate == tomorrowDateString) {
                 sendNotification(
                     dividend.hashCode(),

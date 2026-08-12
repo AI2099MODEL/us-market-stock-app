@@ -484,9 +484,13 @@ fun DividendsScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var searchQuery by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
-    var dividendList by remember { mutableStateOf(generateUpcomingDividends()) }
-    
+    var selectedFilter by remember { mutableStateOf("ALL") } // ALL, HIGH_YIELD, PSU, IT
+
+    val liveDividends by LiveDividendManager.liveDividends.collectAsState()
+    val isLoading by LiveDividendManager.isLoading.collectAsState()
+    val lastSync by LiveDividendManager.lastSyncTimestamp.collectAsState()
+    val statusMsg by LiveDividendManager.syncStatusMessage.collectAsState()
+
     var hasNotificationPermission by remember {
         mutableStateOf(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -511,49 +515,32 @@ fun DividendsScreen(
         if (!hasNotificationPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
+        LiveDividendManager.initialize(context)
+        if (liveDividends.isEmpty()) {
+            scope.launch {
+                LiveDividendManager.fetchLiveDividendsFromInternet(context)
+            }
+        }
     }
 
     val todayDateStr = remember {
         SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
     }
 
-    fun refreshDividends() {
-        scope.launch {
-            isLoading = true
-            try {
-                val updated = withContext(Dispatchers.IO) {
-                    dividendList.map { item ->
-                        try {
-                            val yahooSymbol = if (item.symbol.contains(".")) item.symbol else "${item.symbol}.NS"
-                            val resp = YahooRetrofit.service.getChart(yahooSymbol, "1d", "1m")
-                            val price = resp.chart?.result?.firstOrNull()?.meta?.regularMarketPrice
-                            if (price != null && price > 0) {
-                                val newYield = (item.amountPerShare / price) * 100
-                                item.copy(cmp = price, yieldPercent = newYield)
-                            } else {
-                                item
-                            }
-                        } catch (e: Exception) {
-                            item
-                        }
-                    }
-                }
-                dividendList = updated
-            } finally {
-                isLoading = false
+    val validUpcomingDividends = remember(todayDateStr, searchQuery, selectedFilter, liveDividends) {
+        liveDividends.filter { item ->
+            val matchesSearch = searchQuery.isBlank() ||
+                    item.symbol.contains(searchQuery, ignoreCase = true) ||
+                    item.companyName.contains(searchQuery, ignoreCase = true)
+
+            val matchesFilter = when (selectedFilter) {
+                "HIGH_YIELD" -> item.yieldPercent >= 2.0
+                "PSU" -> listOf("COALINDIA", "VEDL", "BPCL", "IOC", "ONGC", "NTPC", "POWERGRID", "PFC", "RECLTD", "LICI", "GAIL", "NMDC").contains(item.symbol)
+                "IT" -> listOf("TCS", "INFY", "HCLTECH", "WIPRO", "TECHM", "LTIM").contains(item.symbol)
+                else -> true
             }
-        }
-    }
 
-    LaunchedEffect(Unit) {
-        refreshDividends()
-    }
-
-    val validUpcomingDividends = remember(todayDateStr, searchQuery, dividendList) {
-        dividendList.filter { item ->
-            searchQuery.isBlank() ||
-             item.symbol.contains(searchQuery, ignoreCase = true) ||
-             item.companyName.contains(searchQuery, ignoreCase = true)
+            matchesSearch && matchesFilter
         }.sortedBy { it.exDate }
     }
 
@@ -563,7 +550,7 @@ fun DividendsScreen(
             .background(MaterialTheme.colorScheme.background)
             .padding(14.dp)
     ) {
-        // Header
+        // Header & Live Sync Controls
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -573,54 +560,70 @@ fun DividendsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                    .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Surface(
-                    color = Color(0xFFEDE9FE),
-                    shape = RoundedCornerShape(20.dp),
-                    border = BorderStroke(1.dp, Color(0xFFDDD6FE))
-                ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.AttachMoney,
-                            contentDescription = null,
-                            tint = Color(0xFF7C3AED),
-                            modifier = Modifier.size(13.dp)
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(if (isLoading) Color(0xFFEAB308) else Color(0xFF16A34A))
                         )
                         Text(
-                            text = "Indian Stocks Upcoming Dividends (NSE)",
-                            fontSize = 10.5.sp,
+                            text = "Indian Corporate Dividends (NSE / BSE)",
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF7C3AED),
-                            letterSpacing = (-0.1).sp
+                            color = Color(0xFF1E293B)
                         )
                     }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = if (lastSync > 0) "$statusMsg • ${SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(lastSync))}" else statusMsg,
+                        fontSize = 10.sp,
+                        color = Color(0xFF64748B)
+                    )
                 }
 
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        color = Color(0xFF7C3AED),
-                        strokeWidth = 2.dp
-                    )
+                IconButton(
+                    onClick = {
+                        scope.launch {
+                            LiveDividendManager.fetchLiveDividendsFromInternet(context)
+                        }
+                    },
+                    enabled = !isLoading,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            color = Color(0xFF7C3AED),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Payments,
+                            contentDescription = "Sync Internet Dividends",
+                            tint = Color(0xFF7C3AED),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // Search bar
+        // Search Bar
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("Search Indian stock or ticker...", fontSize = 12.sp, color = Color(0xFF94A3B8)) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search", tint = Color(0xFF64748B), modifier = Modifier.size(18.dp)) },
             trailingIcon = {
@@ -639,6 +642,42 @@ fun DividendsScreen(
                 focusedContainerColor = Color.White
             )
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Filter Chips Row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            val filters = listOf(
+                "ALL" to "All Announced (${liveDividends.size})",
+                "HIGH_YIELD" to "High Yield (>2%)",
+                "PSU" to "PSUs & Energy",
+                "IT" to "IT Majors"
+            )
+
+            filters.forEach { (key, label) ->
+                val isSelected = selectedFilter == key
+                FilterChip(
+                    selected = isSelected,
+                    onClick = { selectedFilter = key },
+                    label = { Text(label, fontSize = 11.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Color(0xFFEDE9FE),
+                        selectedLabelColor = Color(0xFF6D28D9),
+                        containerColor = Color.White,
+                        labelColor = Color(0xFF475569)
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = isSelected,
+                        borderColor = Color(0xFFE2E8F0),
+                        selectedBorderColor = Color(0xFFC4B5FD)
+                    )
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(6.dp))
 

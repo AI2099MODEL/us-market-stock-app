@@ -60,6 +60,10 @@ class MyApplication : Application() {
             createNotificationChannel()
             SupabaseSyncManager.initialize(this)
             SupabaseSyncManager.startPeriodicSync()
+            LiveDividendManager.initialize(this)
+            CoroutineScope(Dispatchers.IO).launch {
+                LiveDividendManager.fetchLiveDividendsFromInternet(this@MyApplication)
+            }
             WorkerUtils.schedulePriceAlertWorker(this)
             WorkerUtils.scheduleDividendWorker(this)
             WorkerUtils.scheduleMarketScannerEngineWorker(this)
