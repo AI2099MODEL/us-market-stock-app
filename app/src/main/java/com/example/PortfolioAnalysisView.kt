@@ -952,13 +952,13 @@ fun HoldingGridCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${holding.quantity.toInt()} × $${String.format(Locale.US, "%.0f", holding.buyPrice)}",
+                    text = "${holding.quantity.toInt()} × ₹${String.format(Locale.US, "%.0f", holding.buyPrice)}",
                     fontSize = 10.sp,
                     color = Color(0xFF64748B)
                 )
 
                 Text(
-                    text = "$${String.format(Locale.US, "%.2f", currentPrice)}",
+                    text = "₹${String.format(Locale.US, "%.2f", currentPrice)}",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF7C3AED)
@@ -972,11 +972,11 @@ fun HoldingGridCard(
             ) {
                 Column {
                     Text("Invested", fontSize = 8.5.sp, color = Color(0xFF64748B))
-                    Text("$${String.format(Locale.US, "%,.0f", investedVal)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
+                    Text("₹${String.format(Locale.US, "%,.0f", investedVal)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text("Current Value", fontSize = 8.5.sp, color = Color(0xFF64748B))
-                    Text("$${String.format(Locale.US, "%,.0f", currentVal)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
+                    Text("₹${String.format(Locale.US, "%,.0f", currentVal)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
                 }
             }
 
@@ -994,7 +994,7 @@ fun HoldingGridCard(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "$pnlSign$${String.format(Locale.US, "%,.0f", pnlAmount)} ($pnlSign${String.format(Locale.US, "%.1f", pnlPct)}%)",
+                    text = "$pnlSign₹${String.format(Locale.US, "%,.0f", pnlAmount)} ($pnlSign${String.format(Locale.US, "%.1f", pnlPct)}%)",
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
                     color = bandText,
@@ -1201,7 +1201,7 @@ fun PortfolioAnalyzerTabContent(
             Column(modifier = Modifier.padding(14.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Icon(Icons.Default.Speed, contentDescription = null, tint = Color(0xFF7C3AED), modifier = Modifier.size(16.dp))
-                    Text("BENCHMARK COMPARISON (VS SP500 50)", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
+                    Text("BENCHMARK COMPARISON (VS NIFTY 50)", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
                 }
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -1219,7 +1219,7 @@ fun PortfolioAnalyzerTabContent(
                         Text("${if (totalProfitLossPct >= 0) "+" else ""}${String.format(Locale.US, "%.2f", totalProfitLossPct)}%", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = if (totalProfitLossPct >= 0) Color(0xFF10B981) else Color(0xFFEF4444))
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("SP500 50", fontSize = 10.5.sp, color = Color(0xFF64748B))
+                        Text("NIFTY 50", fontSize = 10.5.sp, color = Color(0xFF64748B))
                         Text("+6.40%", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
                     }
                     Column(horizontalAlignment = Alignment.End) {
@@ -1675,7 +1675,7 @@ fun AddEditHoldingDialog(
 
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Buy Price ($)",
+                                    text = "Buy Price (₹)",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF334155)
@@ -1687,7 +1687,7 @@ fun AddEditHoldingDialog(
                                     placeholder = { Text("e.g. 2450.50", color = Color(0xFF94A3B8), fontSize = 13.sp) },
                                     leadingIcon = {
                                         Icon(
-                                            imageVector = Icons.Default.AttachMoney,
+                                            imageVector = Icons.Default.CurrencyRupee,
                                             contentDescription = null,
                                             tint = Color(0xFF10B981),
                                             modifier = Modifier.size(18.dp)
@@ -1895,7 +1895,7 @@ fun AddEditHoldingDialog(
                                             letterSpacing = 0.5.sp
                                         )
                                         Text(
-                                            text = "$${String.format(Locale.US, "%,.2f", totalInvestment)}",
+                                            text = "₹${String.format(Locale.US, "%,.2f", totalInvestment)}",
                                             fontSize = 17.sp,
                                             fontWeight = FontWeight.Black,
                                             color = Color(0xFF0F172A)
