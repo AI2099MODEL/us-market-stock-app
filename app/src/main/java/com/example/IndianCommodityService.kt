@@ -103,7 +103,7 @@ object IndianCommodityRepository {
         for (base in COMMODITY_TICKERS.keys) {
             if (upper.contains(base)) return base
         }
-        return "GOLD"
+        return upper
     }
     val COMMODITY_TICKERS = mapOf(
         "GOLD" to Pair("MCX Gold Futures", "GC=F"),

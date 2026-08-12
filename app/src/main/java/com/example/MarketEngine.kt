@@ -81,17 +81,16 @@ object MarketEngine {
         val upper = ticker.uppercase().trim()
         val cleanTicker = upper.split(" ").firstOrNull() ?: upper
 
-        // 0. Primary Source: Dhan WebSocket & Live Stream Feed (Zero Latency)
-        val liveWsQuote = DhanWebSocketManager.liveQuotes.value[upper]
-            ?: DhanWebSocketManager.liveQuotes.value[cleanTicker]
-            ?: DhanWebSocketManager.liveQuotes.value[IndianCommodityRepository.resolveBaseSymbol(upper)]
-        if (liveWsQuote != null && liveWsQuote.price > 0.0) {
-            return@withContext liveWsQuote.price
-        }
-
-        // 1. Check if it's an MCX Commodity (GOLD, SILVER, CRUDEOIL, NATURALGAS, COPPER, ZINC, ALUMINIUM, NICKEL)
+        // 0. Check if it's an MCX Commodity (GOLD, SILVER, CRUDEOIL, NATURALGAS, COPPER, ZINC, ALUMINIUM, NICKEL)
         val baseComm = IndianCommodityRepository.resolveBaseSymbol(upper)
         if (IndianCommodityRepository.COMMODITY_TICKERS.containsKey(baseComm)) {
+            val liveWsQuote = DhanWebSocketManager.liveQuotes.value[upper]
+                ?: DhanWebSocketManager.liveQuotes.value[cleanTicker]
+                ?: DhanWebSocketManager.liveQuotes.value[baseComm]
+            if (liveWsQuote != null && liveWsQuote.price > 0.0) {
+                return@withContext liveWsQuote.price
+            }
+
             val commQuote = IndianCommodityRepository.fetchCommodityData(baseComm)
             if (commQuote != null && commQuote.price > 0.0) {
                 return@withContext commQuote.price

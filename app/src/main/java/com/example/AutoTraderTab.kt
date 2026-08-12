@@ -613,7 +613,8 @@ private fun getTradeSubtitle(trade: VirtualTrade): String {
 fun ActiveTradeCardItem(trade: VirtualTrade) {
     val liveQuotes by DhanWebSocketManager.liveQuotes.collectAsState()
     val baseComm = IndianCommodityRepository.resolveBaseSymbol(trade.ticker)
-    val liveQuote = liveQuotes[trade.ticker] ?: liveQuotes[baseComm]
+    val isCommodity = IndianCommodityRepository.COMMODITY_TICKERS.containsKey(baseComm)
+    val liveQuote = if (isCommodity) (liveQuotes[trade.ticker] ?: liveQuotes[baseComm]) else null
     val currentCmp = liveQuote?.price ?: trade.currentPrice
     val profitPct = if (trade.entryPrice > 0.0) ((currentCmp - trade.entryPrice) / trade.entryPrice) * 100.0 else trade.profitPercent
     val grossProfit = trade.allocatedAmount * (profitPct / 100.0)
