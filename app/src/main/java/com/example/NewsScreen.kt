@@ -204,12 +204,13 @@ fun NewsScreen(modifier: Modifier = Modifier) {
             isRefreshingVideos = true
             try {
                 val fetched = withContext(Dispatchers.IO) {
-                    val d1 = async { fetchYouTubeChannelVideos("UCEAZeUIeJs0ijQiqTC5Wg6w", "CNBC", "CNBC LATEST", Color(0xFF0284C7)) }
-                    val d2 = async { fetchYouTubeChannelVideos("UCw5TLrz3qADabwezTEcOmgQ", "Fidelity", "FIDELITY LATEST", Color(0xFF00D09C)) }
-                    val d3 = async { fetchYouTubeChannelVideos("UCvJJ_dzjViJCoLf5uKUTwoA", "Bloomberg Tech", "BLOOMBERG TECH", Color(0xFF2563EB)) }
-                    val d4 = async { fetchYouTubeChannelVideos("UC43vP6323_y7x_96Lw4L75A", "Yahoo Finance", "YAHOO FINANCE", Color(0xFF7C3AED)) }
-                    val d5 = async { fetchYouTubeChannelVideos("UC16niRr50-MSBwiO3YDb3RA", "WSJ Markets", "WSJ MARKETS", Color(0xFFD97706)) }
-                    val all = listOf(d1.await(), d2.await(), d3.await(), d4.await(), d5.await()).flatten()
+                    val d1 = async { fetchYouTubeChannelVideos("UCkXopQ3ubd-rnXnStZqCl2w", "Zee Business", "ZEE BIZ", Color(0xFFE11D48)) }
+                    val d2 = async { fetchYouTubeChannelVideos("UCbWW7i7KnwQfqp6HFg1diFw", "Groww", "GROWW", Color(0xFF00D09C)) }
+                    val d3 = async { fetchYouTubeChannelVideos("UCCAD1rCA4OX0mlylI5Ufcog", "5paisa", "5PAISA", Color(0xFF2563EB)) }
+                    val d4 = async { fetchYouTubeChannelVideos("UCVkyPPuhzGT9jZiWSZefuEg", "Dhan", "DHAN HQ", Color(0xFFEF4444)) }
+                    val d5 = async { fetchYouTubeChannelVideos("UCQIycDaLsBpMKjOCeaKUYVg", "CNBC Awaaz", "CNBC AWAAZ", Color(0xFF0284C7)) }
+                    val d6 = async { fetchYouTubeChannelVideos("UCD3CdwT8lTCe5ZGHbUBxmWA", "ET NOW Swadesh", "ET NOW", Color(0xFFD97706)) }
+                    val all = listOf(d1.await(), d2.await(), d3.await(), d4.await(), d5.await(), d6.await()).flatten()
                     all.distinctBy { it.videoId }.sortedByDescending { it.pubDateMs }
                 }
                 if (fetched.isNotEmpty()) {
@@ -348,7 +349,7 @@ fun NewsScreen(modifier: Modifier = Modifier) {
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Open Account",
+                            text = "Brokers & PAT",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = if (isBrokersSelected) Color(0xFF7C3AED) else Color(0xFF64748B),
@@ -985,6 +986,9 @@ data class BrokerReferralItem(
     val tagline: String,
     val primaryColor: Color,
     val referralUrl: String,
+    val patMetric: String, // e.g. "₹4,150 Cr PAT"
+    val revenueMetric: String, // e.g. "₹8,370 Cr Revenue"
+    val activeClients: String, // e.g. "8.0M+ Active Clients"
     val features: List<String>,
     val isRecommended: Boolean = false
 )
@@ -992,15 +996,18 @@ data class BrokerReferralItem(
 val BROKER_REFERRAL_LEST = listOf(
     BrokerReferralItem(
         id = "dhan",
-        name = "Dhan (Primary MCX Partner)",
+        name = "Dhan (Primary HQ Partner)",
         logoDomain = "dhan.co",
-        tagline = "Lightning Fast API Trading & Advanced MCX Commodity Charts",
+        tagline = "Superfast Lightning APIs, TradingView Charts & Direct Dhan HQ Integration",
         primaryColor = Color(0xFFEF4444),
         referralUrl = "https://dhan.co",
+        patMetric = "High Growth Scale",
+        revenueMetric = "₹350+ Cr Est Revenue",
+        activeClients = "1.5M+ Active Traders",
         features = listOf(
-            "₹20 Flat Brokerage per MCX Commodity Order",
-            "Direct API Integration & Live Margin Reporting",
-            "Advanced Options Chain & TradingView Charting"
+            "PAT Metric: Hyper-growth tech-first broker scaling profitability rapidly",
+            "₹20 Flat Brokerage on F&O and Stock Options (0% Delivery Fee)",
+            "Direct Dhan HQ API Integration & Real-time Live WebSockets"
         ),
         isRecommended = true
     ),
@@ -1008,65 +1015,80 @@ val BROKER_REFERRAL_LEST = listOf(
         id = "zerodha",
         name = "Zerodha (Kite)",
         logoDomain = "zerodha.com",
-        tagline = "India's Largest Retail Broker for Commodities & Futures",
+        tagline = "India's Highest Profit Brokerage House",
         primaryColor = Color(0xFF38BDF8),
         referralUrl = "https://zerodha.com",
+        patMetric = "₹4,150 Cr Net PAT",
+        revenueMetric = "₹8,370 Cr Revenue",
+        activeClients = "8.0M+ Active Clients",
         features = listOf(
-            "₹20 per executed MCX Futures & Options order",
-            "Kite Connect API & Robust Order Routing",
-            "Console Analytics & Tax Reporting"
-        )
-    ),
-    BrokerReferralItem(
-        id = "angelone",
-        name = "Angel One",
-        logoDomain = "angelone.in",
-        tagline = "Full-Service Broking & Commodity Intelligence",
-        primaryColor = Color(0xFFFF7700),
-        referralUrl = "https://www.angelone.in",
-        features = listOf(
-            "Smart API & Commodity Advisory",
-            "Zero AMC for First Year",
-            "Dedicated MCX Margin Support"
-        )
-    ),
-    BrokerReferralItem(
-        id = "upstox",
-        name = "Upstox",
-        logoDomain = "upstox.com",
-        tagline = "High-Speed Trading Platform for Derivatives",
-        primaryColor = Color(0xFF7C3AED),
-        referralUrl = "https://upstox.com",
-        features = listOf(
-            "Super Fast MCX Order Execution",
-            "Flat ₹20 Intra-day & F&O Brokerage",
-            "Advanced Portfolio Analytics"
+            "PAT Metric: ₹4,150 Cr Annual Net Profit After Tax (FY24)",
+            "Flat ₹20 per executed F&O & Equity Intra-day order",
+            "Kite Connect API & Console Portfolio Analytics"
         )
     ),
     BrokerReferralItem(
         id = "groww",
         name = "Groww",
         logoDomain = "groww.in",
-        tagline = "Simple & Transparent Investment Platform",
-        primaryColor = Color(0xFF16A34A),
+        tagline = "India's Largest Broker by Active Client Base",
+        primaryColor = Color(0xFF00D09C),
         referralUrl = "https://groww.in",
+        patMetric = "₹530 Cr Net PAT",
+        revenueMetric = "₹3,140 Cr Revenue",
+        activeClients = "10.5M+ Active Clients",
         features = listOf(
-            "Clean & Intuitive Interface",
-            "Transparent MCX Charges & P&L Statements",
-            "Instant Fund Transfers via UPI"
+            "PAT Metric: ₹530 Cr Net Profit After Tax (Profitable Scale)",
+            "Flat ₹20 or 0.05% Brokerage per executed order",
+            "Clean UI, Direct Mutual Funds & UPI Instant Payouts"
+        )
+    ),
+    BrokerReferralItem(
+        id = "angelone",
+        name = "Angel One",
+        logoDomain = "angelone.in",
+        tagline = "Listed Discount Broker with Strong Quarterly Earnings",
+        primaryColor = Color(0xFFFF7700),
+        referralUrl = "https://www.angelone.in",
+        patMetric = "₹1,120 Cr Net PAT",
+        revenueMetric = "₹4,270 Cr Revenue",
+        activeClients = "6.2M+ Active Clients",
+        features = listOf(
+            "PAT Metric: ₹1,120 Cr Annual Profit After Tax (NSE: ANGELONE)",
+            "Flat ₹20 Intra-day & F&O Orders (Zero AMC for 1st Year)",
+            "SmartAPI & Automated Algo Trading Support"
         )
     ),
     BrokerReferralItem(
         id = "icicidirect",
         name = "ICICI Direct",
         logoDomain = "icicidirect.com",
-        tagline = "Bank-Grade Security & Institutional Commodity Research",
+        tagline = "Full-Service Institutional Bank Broker",
         primaryColor = Color(0xFF003366),
         referralUrl = "https://www.icicidirect.com",
+        patMetric = "₹1,690 Cr Net PAT",
+        revenueMetric = "₹5,050 Cr Revenue",
+        activeClients = "3.5M+ Active Clients",
         features = listOf(
-            "3-in-1 Bank Account Integration",
-            "In-depth MCX Research & Commodity Reports",
-            "Robust Risk Management Controls"
+            "PAT Metric: ₹1,690 Cr Profit After Tax (NSE: ISEC)",
+            "3-in-1 Bank Account Integration with Instant Settlement",
+            "Institutional Research Reports & Advisory Engine"
+        )
+    ),
+    BrokerReferralItem(
+        id = "5paisa",
+        name = "5paisa Capital",
+        logoDomain = "5paisa.com",
+        tagline = "Ultra-Low Flat Brokerage Discount Broker",
+        primaryColor = Color(0xFF2563EB),
+        referralUrl = "https://www.5paisa.com",
+        patMetric = "₹54 Cr Net PAT",
+        revenueMetric = "₹390 Cr Revenue",
+        activeClients = "1.8M+ Active Clients",
+        features = listOf(
+            "PAT Metric: ₹54 Cr Annual Net Profit After Tax (NSE: 5PAISA)",
+            "Ultra Discount Plans starting from ₹10 per order",
+            "Algo Trading API & Derivative Analytics"
         )
     )
 )
@@ -1101,7 +1123,7 @@ fun BrokerAccountsTabContent(
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            text = "OPEN US BROKERAGE ACCOUNT",
+                            text = "INDIAN BROKERAGE HOUSES & FINANCIALS",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Black,
                             color = Color(0xFF38BDF8),
@@ -1109,13 +1131,13 @@ fun BrokerAccountsTabContent(
                         )
                     }
                     Text(
-                        text = "Top US Brokerage Houses",
+                        text = "Top Brokerage Houses & PAT Analytics",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
                     Text(
-                        text = "Choose a US broker below to open an account with $0 commissions, fractional share trading, and advanced trading platforms.",
+                        text = "Compare Net Profit After Tax (PAT), Annual Revenues, Active Client Base, and Flat Brokerage Plans across leading Indian brokers.",
                         fontSize = 12.sp,
                         color = Color(0xFF94A3B8),
                         lineHeight = 16.sp
@@ -1251,6 +1273,54 @@ fun BrokerReferralCard(
                             overflow = TextOverflow.Ellipsis
                         )
                     }
+                }
+            }
+
+            // PAT & Financial Metrics Badges
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color(0xFFDCFCE7),
+                    border = BorderStroke(0.5.dp, Color(0xFF86EFAC))
+                ) {
+                    Text(
+                        text = "PAT: ${broker.patMetric}",
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF15803D),
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color(0xFFE0F2FE),
+                    border = BorderStroke(0.5.dp, Color(0xFF7DD3FC))
+                ) {
+                    Text(
+                        text = broker.revenueMetric,
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF0369A1),
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color(0xFFF3E8FF),
+                    border = BorderStroke(0.5.dp, Color(0xFFD8B4FE))
+                ) {
+                    Text(
+                        text = broker.activeClients,
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF7E22CE),
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
                 }
             }
 

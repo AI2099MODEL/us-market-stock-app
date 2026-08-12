@@ -139,14 +139,14 @@ object IndianCommodityRepository {
                     ?: (fundResponse?.get("net") as? Number)?.toDouble()
                     ?: (fundResponse?.get("sodBalance") as? Number)?.toDouble()
                 if (balance != null && balance > 0.0) {
-                    return@withContext minOf(balance, 200000.0) // Enforce 2.0 Lakh capital limit max
+                    return@withContext minOf(balance, 400000.0) // Enforce 4.0 Lakh capital limit max
                 }
             } catch (e: Exception) {
                 // Fallback
             }
         }
-        // Enforce 2.0 Lakhs (200000.0) maximum capital budget limit
-        return@withContext 200000.0
+        // Enforce 4.0 Lakhs (400000.0) maximum capital budget limit
+        return@withContext 400000.0
     }
 
     /**

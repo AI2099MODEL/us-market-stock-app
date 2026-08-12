@@ -1290,6 +1290,28 @@ fun StockBreakoutCard(
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             // Row 1: Strong Breakout Badge Tag + Heart Icon
+            val cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Kolkata"))
+            val timeInMins = cal.get(java.util.Calendar.HOUR_OF_DAY) * 60 + cal.get(java.util.Calendar.MINUTE)
+            val isOptionsMarketClosed = (timeInMins >= 900 || timeInMins < 555)
+
+            val badgeText = when {
+                res.assetType == "INDEX_OPTION" || res.assetType == "STOCK_OPTION" -> {
+                    if (isOptionsMarketClosed) "INTRADAY • STARTS 9:15 AM" else "INTRADAY OPTION"
+                }
+                res.isBtst && res.assetType == "EQUITY" -> "BTST ELIGIBLE (EQUITY)"
+                res.assetType == "COMMODITY" -> "MCX COMMODITY"
+                else -> res.signalStrength.ifBlank { "STRONG BREAKOUT" }.uppercase()
+            }
+
+            val badgeBg = when {
+                res.assetType == "INDEX_OPTION" || res.assetType == "STOCK_OPTION" -> {
+                    if (isOptionsMarketClosed) Color(0xFF64748B) else Color(0xFF0284C7)
+                }
+                res.isBtst && res.assetType == "EQUITY" -> Color(0xFF7C3AED)
+                res.assetType == "COMMODITY" -> Color(0xFFD97706)
+                else -> StrongBreakoutGreen
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1298,11 +1320,11 @@ fun StockBreakoutCard(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(4.dp))
-                        .background(StrongBreakoutGreen)
+                        .background(badgeBg)
                         .padding(horizontal = 5.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        text = res.signalStrength.ifBlank { "STRONG BREAKOUT" }.uppercase(),
+                        text = badgeText,
                         color = Color.White,
                         fontSize = 7.5.sp,
                         fontWeight = FontWeight.Bold,
@@ -1898,29 +1920,31 @@ fun DashboardScreen(modifier: Modifier = Modifier, onSymbolSelected: (String) ->
                         modifier = Modifier
                             .fillMaxWidth()
                             .horizontalScroll(rememberScrollState())
-                            .padding(horizontal = 8.dp, vertical = 6.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            .padding(horizontal = 6.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         val filters = listOf(
-                            "ALL" to "All Signals",
-                            "INDEX_OPTION" to "Index Options",
-                            "STOCK_OPTION" to "Stock Options",
-                            "COMMODITY" to "MCX Commodities"
+                            "ALL" to "All",
+                            "EQUITY" to "Top Stocks",
+                            "INDEX_OPTION" to "Index Opt",
+                            "STOCK_OPTION" to "Stock Opt",
+                            "COMMODITY" to "MCX"
                         )
                         filters.forEach { (typeKey, label) ->
                             val isSelected = selectedCategoryFilter == typeKey
                             Surface(
                                 onClick = { selectedCategoryFilter = typeKey },
-                                shape = RoundedCornerShape(16.dp),
+                                shape = RoundedCornerShape(12.dp),
                                 color = if (isSelected) Color(0xFF7C3AED) else Color.White,
                                 border = BorderStroke(1.dp, if (isSelected) Color(0xFF7C3AED) else Color(0xFFCBD5E1))
                             ) {
                                 Text(
                                     text = label,
-                                    fontSize = 10.5.sp,
+                                    fontSize = 9.sp,
+                                    maxLines = 1,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                     color = if (isSelected) Color.White else Color(0xFF475569),
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                                 )
                             }
                         }

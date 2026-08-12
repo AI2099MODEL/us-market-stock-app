@@ -68,7 +68,10 @@ fun AutoTraderTabContent(modifier: Modifier = Modifier) {
     // Metrics calculations
     val totalClosed = closedTrades
     val profitBookedCount = remember(totalClosed) { totalClosed.count { it.status == "PROFIT_BOOKED" || it.profitAmount > 0 } }
-    val winRate = remember(totalClosed, profitBookedCount) { if (totalClosed.isNotEmpty()) (profitBookedCount.toDouble() / totalClosed.size * 100).toInt() else 0 }
+    val winRateVal = remember(totalClosed, profitBookedCount) { 
+        if (totalClosed.isNotEmpty()) (profitBookedCount.toDouble() / totalClosed.size * 100) else MarketEngine.winRatePercent.value 
+    }
+    val winRateDisplay = String.format("%.1f", winRateVal)
     val netProfit = remember(totalClosed) { totalClosed.sumOf { it.profitAmount } }
     
     val netInvested = remember(activeTrades) { activeTrades.sumOf { it.allocatedAmount } }
@@ -118,7 +121,7 @@ fun AutoTraderTabContent(modifier: Modifier = Modifier) {
                         )
                     }
                     Text(
-                        text = "• Maximum Capital Cap: ₹2,00,000 (2 Lakhs Cap Strictly Enforced)\n• Trailing SL Buffer: 2.0% - 2.5% (Absorbs noise before exiting)\n• Breakeven Cushion: +0.35% (Ensures STT & charges are covered)\n• Targets: +18% Options / +6.5% Futures (High Risk-Reward)",
+                        text = "• Index & Stock Options: Strictly Intraday ONLY (9:15 AM - 3:00 PM IST). No Options carried as BTST.\n• Post-3:00 PM Engine Shift: Auto-squares off option gains & executes BTST Equity (High RVOL > 2.5x Breakout Stocks)\n• Weekly Expiry Contracts: Scans high-liquidity Weekly Index Options (NIFTY, BANKNIFTY, FINNIFTY)\n• Capital Limits: ₹2,00,000 Options + ₹2,00,000 Commodities/BTST (₹4 Lakhs Total Cap)",
                         fontSize = 10.sp,
                         color = Color(0xFF166534),
                         lineHeight = 14.sp
@@ -477,14 +480,14 @@ fun AutoTraderTabContent(modifier: Modifier = Modifier) {
                             Text("Win Rate", fontSize = 9.5.sp, color = Color(0xFF64748B), fontWeight = FontWeight.Medium)
                             Spacer(modifier = Modifier.height(1.dp))
                             Text(
-                                text = "₹winRate%",
+                                text = "$winRateDisplay%",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = if (winRate >= 50) Color(0xFF7C3AED) else Color(0xFF1E293B)
+                                color = if (winRateVal >= 50.0) Color(0xFF7C3AED) else Color(0xFF1E293B)
                             )
                             Spacer(modifier = Modifier.height(1.dp))
                             Text(
-                                text = "₹profitBookedCount Wins / ${totalClosed.size} Trades",
+                                text = if (totalClosed.isNotEmpty()) "$profitBookedCount Wins / ${totalClosed.size} Trades" else "Signal Accuracy",
                                 fontSize = 9.sp,
                                 color = Color(0xFF64748B),
                                 fontWeight = FontWeight.Normal

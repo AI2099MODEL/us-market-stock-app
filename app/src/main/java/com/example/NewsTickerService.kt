@@ -218,15 +218,15 @@ object NewsTickerService {
     suspend fun fetchNewsArticles(category: String = "All"): List<NewsArticle> = withContext(Dispatchers.IO) {
         try {
             val queryParam = when (category) {
-                "S&P 500 & Dow" -> "S%26P+500+Dow+Jones+Stock+Market+US"
-                "Corporate & Q3" -> "US+Company+Quarterly+Earnings+Corporate+Stock+News"
-                "FII / DII" -> "Wall+Street+Institutional+Investors+Flows+US"
-                "Global Markets" -> "US+Federal+Reserve+Interest+Rates+Wall+Street"
-                "IPO & Earnings" -> "US+Tech+IPOs+Securities+Exchange+Commission+SEC"
-                else -> "NYSE+SP500+Dow+Jones+Wall+Street+Stock+Market"
+                "S&P 500 & Dow" -> "Nifty+50+Sensex+Indian+Stock+Market+Share+Market"
+                "Corporate & Q3" -> "Indian+Company+Quarterly+Results+Earnings+Q1+Q2+Q3+Q4"
+                "FII / DII" -> "FII+DII+Flows+Indian+Stock+Market+NSE+BSE"
+                "Global Markets" -> "US+Federal+Reserve+RBI+Repo+Rate+Global+Markets+India"
+                "IPO & Earnings" -> "Indian+Stock+Market+IPOs+SEBI+Allotment+Earnings"
+                else -> "Nifty+Sensex+Indian+Stock+Market+NSE+BSE+Zee+Business+Moneycontrol"
             }
 
-            val url = "https://news.google.com/rss/search?q=$queryParam+when:2d&hl=en-US&gl=US&ceid=US:en"
+            val url = "https://news.google.com/rss/search?q=$queryParam+when:2d&hl=en-IN&gl=IN&ceid=IN:en"
             val request = Request.Builder()
                 .url(url)
                 .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
