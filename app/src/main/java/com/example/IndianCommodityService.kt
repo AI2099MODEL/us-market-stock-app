@@ -128,7 +128,7 @@ object IndianCommodityRepository {
     )
 
     /**
-     * Check available margin / funds via Dhan API (enforcing 1.5 Lakh / 150,000 INR limit).
+     * Check available margin / funds via Dhan API (enforcing 2.0 Lakh / 200,000 INR limit).
      */
     suspend fun getAvailableMargin(): Double = withContext(Dispatchers.IO) {
         val apiKey = try { BuildConfig.DHAN_API_KEY } catch (e: Exception) { "" }
@@ -139,14 +139,14 @@ object IndianCommodityRepository {
                     ?: (fundResponse?.get("net") as? Number)?.toDouble()
                     ?: (fundResponse?.get("sodBalance") as? Number)?.toDouble()
                 if (balance != null && balance > 0.0) {
-                    return@withContext minOf(balance, 150000.0) // Enforce 1.5 Lakh capital limit max
+                    return@withContext minOf(balance, 200000.0) // Enforce 2.0 Lakh capital limit max
                 }
             } catch (e: Exception) {
                 // Fallback
             }
         }
-        // Enforce 1.5 Lakhs (150000.0) maximum capital budget limit
-        return@withContext 150000.0
+        // Enforce 2.0 Lakhs (200000.0) maximum capital budget limit
+        return@withContext 200000.0
     }
 
     /**

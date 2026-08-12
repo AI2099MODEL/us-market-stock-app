@@ -736,10 +736,15 @@ fun LiveScreen(modifier: Modifier = Modifier, initialSymbol: String? = null, for
                                 coroutineScope.launch(Dispatchers.IO) {
                                     val db = MyApplication.database
                                     val activeTrades = db.virtualTradeDao().getActiveTrades()
+                                    val totalAllocated = activeTrades.sumOf { it.allocatedAmount }
+                                    if (totalAllocated + 50000.0 > MarketEngine.TOTAL_INVESTED_CAPITAL) {
+                                        MarketEngine.addLog("⛔ Manual Trade Blocked: 2 Lakhs Capital Cap Reached (Active: ₹${String.format("%,.0f", totalAllocated)} / ₹2,00,000 Cap).")
+                                        return@launch
+                                    }
                                     val existing = activeTrades.find { it.ticker == activeSymbol }
                                     if (existing != null) {
-                                        val newAlloc = existing.allocatedAmount + 5000.0
-                                        val avgEntry = ((existing.entryPrice * existing.allocatedAmount) + (cmp * 5000.0)) / newAlloc
+                                        val newAlloc = existing.allocatedAmount + 50000.0
+                                        val avgEntry = ((existing.entryPrice * existing.allocatedAmount) + (cmp * 50000.0)) / newAlloc
                                         val averaged = existing.copy(
                                             entryPrice = avgEntry,
                                             currentPrice = cmp,
@@ -760,7 +765,7 @@ fun LiveScreen(modifier: Modifier = Modifier, initialSymbol: String? = null, for
                                             trailingSLThreshold = cmp * 0.020,
                                             stopLoss = cmp * 0.972,
                                             highestPrice = cmp,
-                                            allocatedAmount = 5000.0,
+                                            allocatedAmount = 50000.0,
                                             isBtst = false
                                         )
                                         db.virtualTradeDao().insertTrade(trade)

@@ -118,7 +118,7 @@ fun AutoTraderTabContent(modifier: Modifier = Modifier) {
                         )
                     }
                     Text(
-                        text = "• Max Daily Trades: 6 Capped (Prevents brokerage & STT burn)\n• Trailing SL Buffer: 2.0% - 2.5% (Absorbs noise before exiting)\n• Breakeven Cushion: +0.35% (Ensures STT & charges are covered)\n• Targets: +18% Options / +6.5% Futures (High Risk-Reward)",
+                        text = "• Maximum Capital Cap: ₹2,00,000 (2 Lakhs Cap Strictly Enforced)\n• Trailing SL Buffer: 2.0% - 2.5% (Absorbs noise before exiting)\n• Breakeven Cushion: +0.35% (Ensures STT & charges are covered)\n• Targets: +18% Options / +6.5% Futures (High Risk-Reward)",
                         fontSize = 10.sp,
                         color = Color(0xFF166534),
                         lineHeight = 14.sp

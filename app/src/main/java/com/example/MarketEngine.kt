@@ -12,12 +12,10 @@ import kotlin.math.min
 object MarketEngine {
     private const val TAG = "MarketEngine"
     const val MAX_CONCURRENT_TRADES = 3
-    const val MAX_DAILY_TRADES = 6 // Strict daily maximum trade limit to prevent overtrading & brokerage burn
-    const val MIN_TRADE_COOLDOWN_MS = 5 * 60 * 1000L // 5-minute minimum cooldown between new trade entries
-    const val TOTAL_PORTFOLIO_CAPITAL = 150000.0 // ₹1,50,000 INR Total Portfolio Budget (1.5 Lakhs)
+    const val TOTAL_PORTFOLIO_CAPITAL = 200000.0 // ₹2,00,000 INR Total Portfolio Budget (2.0 Lakhs Cap)
     const val INVESTED_RATIO = 1.0 // 100% active invested capital limit max
-    const val TOTAL_INVESTED_CAPITAL = 150000.0 // ₹1,50,000 INR total active invested capital maximum
-    const val ALLOCATION_PER_TRADE = TOTAL_INVESTED_CAPITAL / MAX_CONCURRENT_TRADES // ₹50,000 INR per trade slot
+    const val TOTAL_INVESTED_CAPITAL = 200000.0 // ₹2,00,000 INR total active invested capital maximum cap
+    const val ALLOCATION_PER_TRADE = 50000.0 // ₹50,000 INR per trade slot
 
     const val DAILY_PROFIT_TARGET_MIN = 5000.0 // ₹5,000 INR daily profit target floor
     const val DAILY_PROFIT_TARGET_MAX = 8000.0 // ₹8,000 INR daily profit target ceiling
@@ -488,26 +486,13 @@ object MarketEngine {
         }
 
         val currentActive = db.virtualTradeDao().getActiveTrades()
-        val todayStr = sdf.format(Date())
-        val todayTradesCount = allTradesList.count { it.entryTime > 0 && sdf.format(Date(it.entryTime)) == todayStr }
-        val lastTradeEntryTime = allTradesList.maxOfOrNull { it.entryTime } ?: 0L
-        val timeSinceLastEntryMs = System.currentTimeMillis() - lastTradeEntryTime
+        val totalActiveAllocated = currentActive.sumOf { it.allocatedAmount }
 
-        val isDailyTradeLimitReached = todayTradesCount >= MAX_DAILY_TRADES
-        val isCooldownActive = timeSinceLastEntryMs < MIN_TRADE_COOLDOWN_MS
-
-        val canEnter = !isDailyRiskCapHit && !isDailyTradeLimitReached && !isCooldownActive && (timeInMinutes < 1410 || isSimulationMode.value)
-
-        if (isDailyTradeLimitReached) {
-            addLog("🛡️ Max Daily Trade Limit Reached ($todayTradesCount/$MAX_DAILY_TRADES trades executed today). New entries paused to prevent overtrading & brokerage burn.")
-        } else if (isCooldownActive && currentActive.size < MAX_CONCURRENT_TRADES) {
-            val remainSec = (MIN_TRADE_COOLDOWN_MS - timeSinceLastEntryMs) / 1000
-            addLog("⏳ Trade Entry Cooldown Active (${remainSec}s remaining). Waiting for high-conviction setup.")
-        }
+        val canEnter = !isDailyRiskCapHit && (timeInMinutes < 1410 || isSimulationMode.value)
 
         if (canEnter) {
             val emptySlots = MAX_CONCURRENT_TRADES - currentActive.size
-            addLog("Slots available: $emptySlots ($todayTradesCount/$MAX_DAILY_TRADES trades executed today). Analyzing market sentiment & breakout scanner...")
+            addLog("Slots available: $emptySlots | Active Capital Allocated: ₹${String.format("%,.0f", totalActiveAllocated)} / ₹2,00,000 Max Cap. Analyzing market sentiment & breakout scanner...")
             isScanning.value = true
             try {
                 // 1. Evaluate Indian Commodity Market Sentiment from Gold & Crude Oil via Dhan API
@@ -596,40 +581,46 @@ object MarketEngine {
 
                         // Check if an active trade already exists for this optimalTicker -> AVERAGE OUT instead of duplicate entry
                         val existingTrade = currentActive.find { it.ticker == optimalTicker }
+                        val currentActiveTotalCapital = currentActive.sumOf { it.allocatedAmount }
+
                         if (existingTrade != null) {
-                            val newAlloc = existingTrade.allocatedAmount + ALLOCATION_PER_TRADE
-                            val avgEntry = ((existingTrade.entryPrice * existingTrade.allocatedAmount) + (candidate.price * ALLOCATION_PER_TRADE)) / newAlloc
-                            val targetPrice = if (isBtstTrade) {
-                                if (isPutOptionTrade) avgEntry * 0.972 else avgEntry * 1.028
-                            } else if (isPutOptionTrade) {
-                                avgEntry * 0.820
-                            } else if (isOptionTrade) {
-                                avgEntry * 1.180
-                            } else {
-                                avgEntry * 1.065
-                            }
+                            if (currentActiveTotalCapital + ALLOCATION_PER_TRADE <= TOTAL_INVESTED_CAPITAL) {
+                                val newAlloc = existingTrade.allocatedAmount + ALLOCATION_PER_TRADE
+                                val avgEntry = ((existingTrade.entryPrice * existingTrade.allocatedAmount) + (candidate.price * ALLOCATION_PER_TRADE)) / newAlloc
+                                val targetPrice = if (isBtstTrade) {
+                                    if (isPutOptionTrade) avgEntry * 0.972 else avgEntry * 1.028
+                                } else if (isPutOptionTrade) {
+                                    avgEntry * 0.820
+                                } else if (isOptionTrade) {
+                                    avgEntry * 1.180
+                                } else {
+                                    avgEntry * 1.065
+                                }
 
-                            val stopLossPrice = if (isBtstTrade) {
-                                if (isPutOptionTrade) avgEntry * 1.022 else avgEntry * 0.978
-                            } else if (isPutOptionTrade) {
-                                avgEntry * 1.045
-                            } else if (isOptionTrade) {
-                                avgEntry * 0.955
-                            } else {
-                                avgEntry * 0.972
-                            }
+                                val stopLossPrice = if (isBtstTrade) {
+                                    if (isPutOptionTrade) avgEntry * 1.022 else avgEntry * 0.978
+                                } else if (isPutOptionTrade) {
+                                    avgEntry * 1.045
+                                } else if (isOptionTrade) {
+                                    avgEntry * 0.955
+                                } else {
+                                    avgEntry * 0.972
+                                }
 
-                            val averagedTrade = existingTrade.copy(
-                                entryPrice = avgEntry,
-                                currentPrice = candidate.price,
-                                allocatedAmount = newAlloc,
-                                targetPrice = targetPrice,
-                                stopLoss = stopLossPrice
-                            )
-                            db.virtualTradeDao().updateTrade(averagedTrade)
-                            SupabaseSyncManager.publishTrade(averagedTrade)
-                            addLog("🔄 Averaged Out Position: $optimalTicker at ₹${String.format("%.2f", candidate.price)} | New Avg Entry: ₹${String.format("%.2f", avgEntry)} (Total Allocated: ₹${String.format("%,.0f", newAlloc)})")
-                        } else if (currentActive.size < MAX_CONCURRENT_TRADES && (currentActive.sumOf { it.allocatedAmount } + ALLOCATION_PER_TRADE) <= TOTAL_INVESTED_CAPITAL) {
+                                val averagedTrade = existingTrade.copy(
+                                    entryPrice = avgEntry,
+                                    currentPrice = candidate.price,
+                                    allocatedAmount = newAlloc,
+                                    targetPrice = targetPrice,
+                                    stopLoss = stopLossPrice
+                                )
+                                db.virtualTradeDao().updateTrade(averagedTrade)
+                                SupabaseSyncManager.publishTrade(averagedTrade)
+                                addLog("🔄 Averaged Out Position: $optimalTicker at ₹${String.format("%.2f", candidate.price)} | New Avg Entry: ₹${String.format("%.2f", avgEntry)} (Total Allocated: ₹${String.format("%,.0f", newAlloc)})")
+                            } else {
+                                addLog("⛔ 2 Lakhs Maximum Capital Cap Reached (Active Capital: ₹${String.format("%,.0f", currentActiveTotalCapital)} / ₹2,00,000 Cap). Position averaging for $optimalTicker blocked.")
+                            }
+                        } else if (currentActive.size < MAX_CONCURRENT_TRADES && (currentActiveTotalCapital + ALLOCATION_PER_TRADE) <= TOTAL_INVESTED_CAPITAL) {
                             val targetPrice = if (isBtstTrade) {
                                 if (isPutOptionTrade) candidate.price * 0.972 else candidate.price * 1.028
                             } else if (isPutOptionTrade) {
@@ -670,7 +661,9 @@ object MarketEngine {
                             val insertedId = db.virtualTradeDao().insertTrade(trade)
                             val tradeWithId = trade.copy(id = insertedId.toInt())
                             SupabaseSyncManager.publishTrade(tradeWithId)
-                            addLog("🚀 Auto-Trade Executed$lotLabel: $instrumentLabel for $optimalTicker (Score: ${candidate.score}) at ₹${String.format("%.2f", candidate.price)}")
+                            addLog("🚀 Auto-Trade Executed$lotLabel: $instrumentLabel for $optimalTicker (Score: ${candidate.score}) at ₹${String.format("%.2f", candidate.price)} (Allocated: ₹${String.format("%,.0f", ALLOCATION_PER_TRADE)})")
+                        } else if ((currentActiveTotalCapital + ALLOCATION_PER_TRADE) > TOTAL_INVESTED_CAPITAL) {
+                            addLog("⛔ 2 Lakhs Maximum Capital Cap Reached (Active Capital: ₹${String.format("%,.0f", currentActiveTotalCapital)} / ₹2,00,000 Cap). New trade entry for $optimalTicker blocked.")
                         }
                     }
                 }
