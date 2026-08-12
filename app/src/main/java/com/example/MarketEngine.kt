@@ -648,12 +648,14 @@ object MarketEngine {
         addLog("⏹️ User chose to stop trading for today.")
     }
 
-    suspend fun resetAllTradesAndRestart(db: AppDatabase, context: Context) {
+    suspend fun resetAllTradesAndRestart(db: AppDatabase, context: Context) = withContext(Dispatchers.IO) {
         db.virtualTradeDao().clearAllTrades()
         db.profitLogDao().clearAllLogs()
+        SupabaseSyncManager.clearAllCloudTrades()
+        engineLogs.value = emptyList()
         isPausedForUserConfirmation.value = false
         confirmationPromptMessage.value = null
-        addLog("🔄 ALL TRADES & LOGS RESET. Engine restarting fresh scan & execution...")
+        addLog("🔄 ALL TRADES & LOGS RESET (Local & Supabase Cloud). Engine restarting fresh scan & execution...")
         runEngineCycle(context)
     }
 

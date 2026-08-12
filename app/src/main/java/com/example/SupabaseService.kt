@@ -285,4 +285,15 @@ object SupabaseSyncManager {
             }
         }
     }
+
+    suspend fun clearAllCloudTrades() = withContext(Dispatchers.IO) {
+        val service = apiService ?: return@withContext
+        try {
+            val bearer = "Bearer $supabaseAnonKey"
+            service.deleteAllTrades(apiKey = supabaseAnonKey, bearerToken = bearer)
+            Log.d(TAG, "All cloud trades cleared from Supabase")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to clear cloud trades", e)
+        }
+    }
 }
