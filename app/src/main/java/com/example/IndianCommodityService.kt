@@ -260,8 +260,8 @@ object IndianCommodityRepository {
 
         // 0. Priority: Dhan WebSocket & Live Stream Feed
         if (!skipWsCache) {
-            val liveWsQuote = DhanWebSocketManager.liveQuotes.value[symbolKey.uppercase()]
-                ?: DhanWebSocketManager.liveQuotes.value[baseSymbol]
+            val liveWsQuote = ShoonyaWebSocketManager.liveQuotes.value[symbolKey.uppercase()]
+                ?: ShoonyaWebSocketManager.liveQuotes.value[baseSymbol]
             if (liveWsQuote != null && liveWsQuote.price > 0.0) {
                 return@withContext if (isMini) liveWsQuote.copy(symbol = symbolKey.uppercase(), name = name) else liveWsQuote
             }

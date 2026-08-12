@@ -68,7 +68,7 @@ class MyApplication : Application() {
             WorkerUtils.scheduleDividendWorker(this)
             WorkerUtils.scheduleMarketScannerEngineWorker(this)
             MarketEngine.startEngine(this)
-            DhanWebSocketManager.start()
+            ShoonyaWebSocketManager.start()
         } catch (e: Throwable) {
             android.util.Log.e("MyApplication", "Workers/MarketEngine init error: ${e.message}")
         }

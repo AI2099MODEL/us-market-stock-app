@@ -57,8 +57,8 @@ object MarketEngine {
 
     private suspend fun fetchStockOrIndexPrice(ticker: String): Double {
         val clean = ticker.replace(".NS", "").replace("^", "").uppercase()
-        val liveWsQuote = DhanWebSocketManager.liveQuotes.value[ticker]
-            ?: DhanWebSocketManager.liveQuotes.value[clean]
+        val liveWsQuote = ShoonyaWebSocketManager.liveQuotes.value[ticker]
+            ?: ShoonyaWebSocketManager.liveQuotes.value[clean]
         if (liveWsQuote != null && liveWsQuote.price > 0.0) {
             return liveWsQuote.price
         }
@@ -84,9 +84,9 @@ object MarketEngine {
         // 0. Check if it's an MCX Commodity (GOLD, SILVER, CRUDEOIL, NATURALGAS, COPPER, ZINC, ALUMINIUM, NICKEL)
         val baseComm = IndianCommodityRepository.resolveBaseSymbol(upper)
         if (IndianCommodityRepository.COMMODITY_TICKERS.containsKey(baseComm)) {
-            val liveWsQuote = DhanWebSocketManager.liveQuotes.value[upper]
-                ?: DhanWebSocketManager.liveQuotes.value[cleanTicker]
-                ?: DhanWebSocketManager.liveQuotes.value[baseComm]
+            val liveWsQuote = ShoonyaWebSocketManager.liveQuotes.value[upper]
+                ?: ShoonyaWebSocketManager.liveQuotes.value[cleanTicker]
+                ?: ShoonyaWebSocketManager.liveQuotes.value[baseComm]
             if (liveWsQuote != null && liveWsQuote.price > 0.0) {
                 return@withContext liveWsQuote.price
             }

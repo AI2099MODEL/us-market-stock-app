@@ -26,10 +26,10 @@ import java.util.Locale
 
 @Composable
 fun DhanWebSocketDebugCard(modifier: Modifier = Modifier) {
-    val status by DhanWebSocketManager.connectionStatus.collectAsState()
-    val tickCount by DhanWebSocketManager.tickCount.collectAsState()
-    val lastHeartbeat by DhanWebSocketManager.lastHeartbeat.collectAsState()
-    val liveQuotes by DhanWebSocketManager.liveQuotes.collectAsState()
+    val status by ShoonyaWebSocketManager.connectionStatus.collectAsState()
+    val tickCount by ShoonyaWebSocketManager.tickCount.collectAsState()
+    val lastHeartbeat by ShoonyaWebSocketManager.lastHeartbeat.collectAsState()
+    val liveQuotes by ShoonyaWebSocketManager.liveQuotes.collectAsState()
 
     var isExpanded by remember { mutableStateOf(true) }
 
@@ -78,8 +78,8 @@ fun DhanWebSocketDebugCard(modifier: Modifier = Modifier) {
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     IconButton(
                         onClick = {
-                            DhanWebSocketManager.stop()
-                            DhanWebSocketManager.start()
+                            ShoonyaWebSocketManager.stop()
+                            ShoonyaWebSocketManager.start()
                         },
                         modifier = Modifier.size(32.dp)
                     ) {

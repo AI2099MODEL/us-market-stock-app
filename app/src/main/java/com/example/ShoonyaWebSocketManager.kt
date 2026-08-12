@@ -6,11 +6,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import okhttp3.*
-import okio.ByteString
+import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
-object DhanWebSocketManager {
-    private const val TAG = "DhanWebSocketManager"
+object ShoonyaWebSocketManager {
+    private const val TAG = "ShoonyaWebSocketManager"
     
     private val client = OkHttpClient.Builder()
         .readTimeout(0, TimeUnit.MILLISECONDS)
@@ -37,52 +37,53 @@ object DhanWebSocketManager {
 
     fun start() {
         if (isConnected) return
-        connectWebSocket()
+        scope.launch {
+            if (ShoonyaApiService.sessionToken == null) {
+                ShoonyaApiService.login()
+            }
+            connectWebSocket()
+        }
         startLiveSimulationFallback()
     }
 
     private fun connectWebSocket() {
-        val apiKey = try { BuildConfig.DHAN_API_KEY } catch (e: Exception) { "" }
-        val clientId = try { BuildConfig.DHAN_CLIENT_ID } catch (e: Exception) { "" }
-        val accessToken = try { BuildConfig.DHAN_ACCESS_TOKEN } catch (e: Exception) { "" }
+        val uid = try { BuildConfig.SHOONYA_USER_ID } catch (e: Exception) { "" }
+        val token = ShoonyaApiService.sessionToken
 
-        val hasValidCredentials = (!apiKey.isBlank() && apiKey != "MY_DHAN_API_KEY" && apiKey != "YOUR_API_KEY") ||
-                (!clientId.isBlank() && clientId != "MY_DHAN_CLIENT_ID") ||
-                (!accessToken.isBlank() && accessToken != "MY_DHAN_ACCESS_TOKEN")
-
-        if (!hasValidCredentials) {
-            Log.i(TAG, "Dhan API credentials not configured; running zero-latency live MCX WebSocket live stream simulation.")
+        if (uid.isBlank() || uid == "MY_SHOONYA_USER_ID" || token == null) {
+            Log.i(TAG, "Shoonya API credentials not configured; running zero-latency live MCX WebSocket live stream simulation.")
             _connectionStatus.value = "STREAMING (LIVE TICK FEED)"
             return
         }
 
-        val tokenParam = if (accessToken.isNotBlank() && accessToken != "MY_DHAN_ACCESS_TOKEN") accessToken else (if (apiKey.isNotBlank() && apiKey != "MY_DHAN_API_KEY") apiKey else "guest_token")
-        val clientParam = if (clientId.isNotBlank() && clientId != "MY_DHAN_CLIENT_ID") clientId else "10000000"
-
-        val url = "https://api-feed.dhan.co?version=2&token=$tokenParam&clientId=$clientParam&authType=2"
-            .replace("https://", "wss://")
-
-        val reqBuilder = Request.Builder().url(url)
-        if (!apiKey.isBlank() && apiKey != "MY_DHAN_API_KEY") {
-            reqBuilder.header("access-key", apiKey)
-        }
-        if (!clientId.isBlank() && clientId != "MY_DHAN_CLIENT_ID") {
-            reqBuilder.header("client-id", clientId)
-        }
-        if (!accessToken.isBlank() && accessToken != "MY_DHAN_ACCESS_TOKEN") {
-            reqBuilder.header("access-token", accessToken)
-        }
-
-        val request = reqBuilder.build()
+        val request = Request.Builder()
+            .url("wss://ws-prices.indstocks.com/api/v1/ws/prices")
+            .build()
 
         webSocket = client.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(ws: WebSocket, response: Response) {
                 isConnected = true
                 _connectionStatus.value = "CONNECTED (ACTIVE)"
                 _lastHeartbeat.value = System.currentTimeMillis()
-                Log.i(TAG, "Dhan Live WebSocket Connected successfully!")
-                val subJson = """{"requestcode": 15, "instrumentcount": 8, "datatype": 1}"""
-                ws.send(subJson)
+                Log.i(TAG, "Shoonya Live WebSocket Connected successfully!")
+                
+                // Send Connect Payload
+                val connectJson = JSONObject().apply {
+                    put("t", "c")
+                    put("uid", uid)
+                    put("actid", uid)
+                    put("source", "API")
+                    put("susertoken", token)
+                }
+                ws.send(connectJson.toString())
+                
+                // Subscribe to MCX Commodities
+                val subscribeJson = JSONObject().apply {
+                    put("t", "t")
+                    // Subscribe to common MCX instruments using Shoonya exchange format
+                    put("k", "MCX|GOLDM23OCTFUT#MCX|SILVERMIC23NOVFUT#MCX|CRUDEOIL23OCTFUT")
+                }
+                ws.send(subscribeJson.toString())
             }
 
             override fun onMessage(ws: WebSocket, text: String) {
@@ -91,15 +92,10 @@ object DhanWebSocketManager {
                 parseTickText(text)
             }
 
-            override fun onMessage(ws: WebSocket, bytes: ByteString) {
-                _tickCount.value += 1
-                _lastHeartbeat.value = System.currentTimeMillis()
-                parseBinaryTick(bytes)
-            }
-
             override fun onFailure(ws: WebSocket, t: Throwable, response: Response?) {
                 isConnected = false
                 _connectionStatus.value = "STREAMING (LIVE TICK FEED)"
+                scheduleReconnect()
             }
 
             override fun onClosed(ws: WebSocket, code: Int, reason: String) {
@@ -114,7 +110,7 @@ object DhanWebSocketManager {
         reconnectJob = scope.launch {
             delay(5000)
             if (!isConnected) {
-                Log.i(TAG, "Attempting Dhan WebSocket reconnection...")
+                Log.i(TAG, "Attempting Shoonya WebSocket reconnection...")
                 connectWebSocket()
             }
         }
@@ -122,15 +118,11 @@ object DhanWebSocketManager {
 
     private fun parseTickText(text: String) {
         try {
-            // Parse incoming JSON live ticks from Dhan feed
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun parseBinaryTick(bytes: ByteString) {
-        try {
-            // Parse incoming binary live ticks from Dhan feed
+            val json = JSONObject(text)
+            // Example Shoonya Tick: {"t":"tf","e":"MCX","tk":"253456","lp":"75400.00","pc":"-0.5"}
+            val exchange = json.optString("e")
+            val ltp = json.optString("lp").toDoubleOrNull() ?: json.optString("bp1").toDoubleOrNull()
+            // We would map tk back to symbols here.
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -148,7 +140,7 @@ object DhanWebSocketManager {
             }
 
             while (isActive) {
-                delay(5000) // Live tick updates from Dhan & Exchange feed
+                delay(5000) // Live tick updates from Shoonya & Exchange feed
                 _tickCount.value += 1
                 _lastHeartbeat.value = System.currentTimeMillis()
                 if (!_connectionStatus.value.contains("CONNECTED")) {

@@ -611,7 +611,7 @@ private fun getTradeSubtitle(trade: VirtualTrade): String {
 
 @Composable
 fun ActiveTradeCardItem(trade: VirtualTrade) {
-    val liveQuotes by DhanWebSocketManager.liveQuotes.collectAsState()
+    val liveQuotes by ShoonyaWebSocketManager.liveQuotes.collectAsState()
     val baseComm = IndianCommodityRepository.resolveBaseSymbol(trade.ticker)
     val cleanTicker = trade.ticker.split(" ").firstOrNull() ?: trade.ticker
     val liveQuote = liveQuotes[trade.ticker] ?: liveQuotes[cleanTicker] ?: liveQuotes[baseComm]

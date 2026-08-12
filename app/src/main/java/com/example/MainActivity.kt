@@ -1737,7 +1737,7 @@ fun DashboardScreen(modifier: Modifier = Modifier, onSymbolSelected: (String) ->
         }
     }
 
-    val liveQuotes by DhanWebSocketManager.liveQuotes.collectAsState()
+    val liveQuotes by ShoonyaWebSocketManager.liveQuotes.collectAsState()
 
     // Real-time CMP Refresh for Breakout Contracts from Dhan WebSocket live quotes
     LaunchedEffect(liveQuotes) {

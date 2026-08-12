@@ -318,8 +318,8 @@ fun PortfolioAnalysisView(modifier: Modifier = Modifier) {
                             val cleanTicker = ticker.replace("-EQ", "").uppercase().trim()
 
                             // 1. First check Dhan live websocket feed for zero latency tick
-                            val liveWsQuote = DhanWebSocketManager.liveQuotes.value[ticker]
-                                ?: DhanWebSocketManager.liveQuotes.value[cleanTicker]
+                            val liveWsQuote = ShoonyaWebSocketManager.liveQuotes.value[ticker]
+                                ?: ShoonyaWebSocketManager.liveQuotes.value[cleanTicker]
 
                             if (liveWsQuote != null && liveWsQuote.price > 0.0) {
                                 newMap[ticker] = HoldingPriceData(
