@@ -34,7 +34,7 @@ data class StockBreakoutPreset(
 )
 
 object StockScanner {
-    val COMMODITY_SCAN_TICKERS = IndianCommodityRepository.COMMODITY_TICKERS.keys.toList()
+    val COMMODITY_SCAN_TICKERS = IndianCommodityRepository.COMMODITY_TICKERS.keys.toList() + IndianCommodityRepository.COMMODITY_CONTRACTS.values.map { it.miniSymbol }
 
     // Top Liquid NIFTY 200 Constituents
     val NIFTY_200_TICKERS = listOf(

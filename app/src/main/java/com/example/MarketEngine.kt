@@ -91,7 +91,7 @@ object MarketEngine {
                 return@withContext liveWsQuote.price
             }
 
-            val commQuote = IndianCommodityRepository.fetchCommodityData(baseComm)
+            val commQuote = IndianCommodityRepository.fetchCommodityData(upper)
             if (commQuote != null && commQuote.price > 0.0) {
                 return@withContext commQuote.price
             }
@@ -156,7 +156,7 @@ object MarketEngine {
                     val brokerageDetails = IndianCommodityRepository.calculateDhanBrokerage(turnover, isSell = true, isOptions = isOptionTrade)
                     val mcxFees = brokerageDetails.totalCharges
 
-                    val newHighest = max(max(trade.highestPrice, trade.entryPrice), currentPrice)
+                    val newHighest = if (trade.targetPrice < trade.entryPrice) minOf(minOf(trade.highestPrice, trade.entryPrice), currentPrice) else maxOf(maxOf(trade.highestPrice, trade.entryPrice), currentPrice)
 
                     val isShort = trade.targetPrice < trade.entryPrice
                         val profitPct = if (isShort) ((trade.entryPrice - currentPrice) / trade.entryPrice) * 100.0 else ((currentPrice - trade.entryPrice) / trade.entryPrice) * 100.0
@@ -279,7 +279,7 @@ object MarketEngine {
                         val brokerageDetails = IndianCommodityRepository.calculateDhanBrokerage(turnover, isSell = true, isOptions = isOptionTrade)
                         val mcxFees = brokerageDetails.totalCharges
 
-                        val newHighest = max(max(trade.highestPrice, trade.entryPrice), currentPrice)
+                        val newHighest = if (trade.targetPrice < trade.entryPrice) minOf(minOf(trade.highestPrice, trade.entryPrice), currentPrice) else maxOf(maxOf(trade.highestPrice, trade.entryPrice), currentPrice)
 
                         val isShort = trade.targetPrice < trade.entryPrice
                         val profitPct = if (isShort) ((trade.entryPrice - currentPrice) / trade.entryPrice) * 100.0 else ((currentPrice - trade.entryPrice) / trade.entryPrice) * 100.0
@@ -287,7 +287,7 @@ object MarketEngine {
                         val netProfitAmt = grossProfitAmt - mcxFees
 
                         // Calculate Peak Profit achieved in INR (Gross & Net after Dhan brokerage & charges)
-                        val peakUnderlyingChangePct = ((newHighest - trade.entryPrice) / trade.entryPrice) * 100.0
+                        val peakUnderlyingChangePct = if (isShort) ((trade.entryPrice - newHighest) / trade.entryPrice) * 100.0 else ((newHighest - trade.entryPrice) / trade.entryPrice) * 100.0
                         val peakProfitPct = peakUnderlyingChangePct
                         val peakGrossProfitAmt = trade.allocatedAmount * (peakProfitPct / 100.0)
                         val peakNetProfitAmt = peakGrossProfitAmt - mcxFees
@@ -312,10 +312,10 @@ object MarketEngine {
                         if (profitPct >= partialThreshold && !trade.isPartialBooked && trade.status == "ACTIVE") {
                             val partialProfit = (netProfitAmt / 2.0)
                             val cushionPct = 0.015 // 1.5% cushion
-                            val safeSL = trade.entryPrice * (1.0 + cushionPct)
+                            val safeSL = trade.entryPrice * (if (isShort) (1.0 - cushionPct) else (1.0 + cushionPct))
                             updatedTrade = updatedTrade.copy(
                                 isPartialBooked = true,
-                                stopLoss = max(trade.stopLoss, safeSL),
+                                stopLoss = if (isShort) minOf(trade.stopLoss, safeSL) else maxOf(trade.stopLoss, safeSL),
                                 profitAmount = netProfitAmt
                             )
                             val optionTag = if (isOptionTrade && activeOptionsCount > 1) " [Multi-Option ($activeOptionsCount active)]" else ""
@@ -329,16 +329,16 @@ object MarketEngine {
                         val breakevenGainPct = if (isOptionTrade) 1.2 else 1.5
                         if (peakUnderlyingChangePct >= breakevenGainPct) {
                             val feeCushionPct = 0.0035 // 0.35% cushion ensures net P&L after STT & brokerage is strictly non-negative
-                            val breakevenSL = trade.entryPrice * (1.0 + feeCushionPct)
-                            activeStopLoss = max(activeStopLoss, breakevenSL)
+                            val breakevenSL = trade.entryPrice * (if (isShort) (1.0 - feeCushionPct) else (1.0 + feeCushionPct))
+                            activeStopLoss = if (isShort) minOf(activeStopLoss, breakevenSL) else maxOf(activeStopLoss, breakevenSL)
                         }
 
                         // 2. Continuous Dynamic Trailing Profit (Trail SL 2.0% below peak highest price achieved for equity, 2.5% for options to absorb market noise)
                         val minTrailingGainPct = if (isOptionTrade) 1.8 else 2.0 // Activates after +1.8% / +2.0% gain
                         if (peakUnderlyingChangePct >= minTrailingGainPct) {
                             val trailDistance = if (isOptionTrade) 0.025 else 0.020 // 2.5% for options, 2.0% for equity
-                            val dynamicTrailingSL = newHighest * (1.0 - trailDistance)
-                            activeStopLoss = max(activeStopLoss, dynamicTrailingSL)
+                            val dynamicTrailingSL = newHighest * (if (isShort) (1.0 + trailDistance) else (1.0 - trailDistance))
+                            activeStopLoss = if (isShort) minOf(activeStopLoss, dynamicTrailingSL) else maxOf(activeStopLoss, dynamicTrailingSL)
                         }
 
                         // 3. Multi-Tier Percentage-Based Profit Lock (locks incremental percentage gains as price progresses)
@@ -349,12 +349,12 @@ object MarketEngine {
                                 else -> 1.0 // Lock 1.0% profit gain
                             }
                             
-                            val percentageLockedSL = trade.entryPrice * (1.0 + (lockedGainPct / 100.0))
-                            activeStopLoss = max(activeStopLoss, percentageLockedSL)
+                            val percentageLockedSL = trade.entryPrice * (if (isShort) (1.0 - (lockedGainPct / 100.0)) else (1.0 + (lockedGainPct / 100.0)))
+                            activeStopLoss = if (isShort) minOf(activeStopLoss, percentageLockedSL) else maxOf(activeStopLoss, percentageLockedSL)
                         }
 
                         // Ensure stop-loss only tightens in favor of profit and never loosens
-                        activeStopLoss = max(updatedTrade.stopLoss, activeStopLoss)
+                        activeStopLoss = if (isShort) minOf(updatedTrade.stopLoss, activeStopLoss) else maxOf(updatedTrade.stopLoss, activeStopLoss)
 
                         // Log trailing SL adjustment if stop-loss was raised significantly
                         if (activeStopLoss != updatedTrade.stopLoss && Math.abs(activeStopLoss - updatedTrade.stopLoss) > (trade.entryPrice * 0.002)) {
