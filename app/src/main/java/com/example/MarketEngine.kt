@@ -178,7 +178,7 @@ object MarketEngine {
     fun startEngine(context: Context) {
         if (isEngineRunning.value) return
         isEngineRunning.value = true
-        addLog("Virtual Trading Engine & Dhan Live Tick Stream STARTED.")
+        addLog("Virtual Trading Engine & Shoonya Live Tick Stream STARTED.")
         
         monitoringJob = scope.launch {
             // First run immediately
@@ -274,7 +274,7 @@ object MarketEngine {
                         val currentPrice = fetchRealMarketPrice(trade.ticker, trade.entryPrice)
                         val isOptionTrade = trade.name.contains("Option") || trade.ticker.contains("CE") || trade.ticker.contains("PE")
                         
-                        // Calculate Indian MCX Brokerage & Regulatory Charges (Brokerage, STT, Exchange, GST, SEBI, Stamp Duty) via Dhan
+                        // Calculate Indian MCX Brokerage & Regulatory Charges (Brokerage, STT, Exchange, GST, SEBI, Stamp Duty) via Shoonya
                         val turnover = trade.allocatedAmount * 2.0
                         val brokerageDetails = IndianCommodityRepository.calculateShoonyaCharges(turnover, isSell = true, isOptions = false)
                         val mcxFees = brokerageDetails.totalCharges
@@ -476,7 +476,7 @@ object MarketEngine {
             addLog("Active Allocations: MCX Commodities (${currentActive.size}/2 slots, ₹${String.format("%,.0f", activeCommodityCapital)}/₹2,00,000 Cap)")
             isScanning.value = true
             try {
-                // 1. Evaluate Indian Commodity Market Sentiment from Gold & Crude Oil via Dhan API
+                // 1. Evaluate Indian Commodity Market Sentiment from Gold & Crude Oil via Shoonya API
                 val goldQuote = try { IndianCommodityRepository.fetchCommodityData("GOLD") } catch (e: Exception) { null }
                 val goldChangePct = goldQuote?.changePercent ?: 0.5
 
@@ -681,7 +681,7 @@ object MarketEngine {
                 )
                 db.virtualTradeDao().updateTrade(squared)
                 SupabaseSyncManager.publishTrade(squared)
-                addLog("⏹️ Manually Squared Off ${trade.ticker} at ₹${String.format("%.2f", trade.currentPrice)} (Net P&L: ₹${String.format("%.2f", netProfitAmt)} INR after ₹${String.format("%.2f", brokerageDetails.totalCharges)} Dhan fees)")
+                addLog("⏹️ Manually Squared Off ${trade.ticker} at ₹${String.format("%.2f", trade.currentPrice)} (Net P&L: ₹${String.format("%.2f", netProfitAmt)} INR after ₹${String.format("%.2f", brokerageDetails.totalCharges)} Shoonya zero brokerage fees)")
             }
             logDailyProfit(db)
         }
@@ -706,7 +706,7 @@ object MarketEngine {
             )
             db.virtualTradeDao().updateTrade(updated)
             SupabaseSyncManager.publishTrade(updated)
-            addLog("⏹️ Manually Squared Off ${trade.ticker} at ₹${String.format("%.2f", trade.currentPrice)} (Net P&L: ₹${String.format("%.2f", netProfitAmt)} INR after ₹${String.format("%.2f", brokerageDetails.totalCharges)} Dhan fees)")
+            addLog("⏹️ Manually Squared Off ${trade.ticker} at ₹${String.format("%.2f", trade.currentPrice)} (Net P&L: ₹${String.format("%.2f", netProfitAmt)} INR after ₹${String.format("%.2f", brokerageDetails.totalCharges)} Shoonya zero brokerage fees)")
             logDailyProfit(db)
         }
     }

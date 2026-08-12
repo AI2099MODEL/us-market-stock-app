@@ -995,6 +995,23 @@ data class BrokerReferralItem(
 
 val BROKER_REFERRAL_LEST = listOf(
     BrokerReferralItem(
+        id = "shoonya",
+        name = "Shoonya (Finvasia)",
+        logoDomain = "shoonya.com",
+        tagline = "Zero Brokerage Across All Segments, Free Trading APIs & Advanced WebSockets",
+        primaryColor = Color(0xFF10B981),
+        referralUrl = "https://shoonya.com",
+        patMetric = "High Profit Margin Scale",
+        revenueMetric = "Established FinTech Leader",
+        activeClients = "1.0M+ Active Traders",
+        features = listOf(
+            "PAT Metric: Zero Brokerage Forever across Equity, F&O, Currency & MCX",
+            "Absolute ₹0 Brokerage & ₹0 AMC on Trading Accounts",
+            "Live WebSockets, Open API & Automated Algo Trading Support"
+        ),
+        isRecommended = true
+    ),
+    BrokerReferralItem(
         id = "dhan",
         name = "Dhan (Primary HQ Partner)",
         logoDomain = "dhan.co",
