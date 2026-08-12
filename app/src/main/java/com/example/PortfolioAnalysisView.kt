@@ -68,6 +68,7 @@ data class HoldingPriceData(
 )
 
 val BROKER_OPTIONS = listOf(
+    "Dhan",
     "Charles Schwab",
     "Fidelity",
     "Robinhood",
@@ -82,6 +83,7 @@ val BROKER_OPTIONS = listOf(
 
 fun getBrokerLogoUrl(broker: String): String {
     val domain = when (broker.trim().lowercase()) {
+        "dhan", "dhan hq" -> "dhan.co"
         "schwab", "charles schwab" -> "schwab.com"
         "fidelity" -> "fidelity.com"
         "robinhood" -> "robinhood.com"
@@ -100,6 +102,7 @@ fun getBrokerLogoUrl(broker: String): String {
 fun BrokerBadge(broker: String, modifier: Modifier = Modifier) {
     val logoUrl = getBrokerLogoUrl(broker)
     val (letter, bg) = when (broker.trim().lowercase()) {
+        "dhan", "dhan hq" -> Pair("D", Color(0xFF10B981))
         "schwab", "charles schwab" -> Pair("S", Color(0xFF00A0DF))
         "fidelity" -> Pair("F", Color(0xFF00875A))
         "robinhood" -> Pair("R", Color(0xFF00C805))
@@ -265,6 +268,8 @@ fun PortfolioAnalysisView(modifier: Modifier = Modifier) {
     var showLimitDialog by remember { mutableStateOf(false) }
     var editingHolding by remember { mutableStateOf<PortfolioHolding?>(null) }
     var isAutoRefreshPaused by remember { mutableStateOf(false) }
+    var isSyncingDhan by remember { mutableStateOf(false) }
+    var dhanSyncMessage by remember { mutableStateOf<String?>(null) }
 
     // Persist holdings whenever changed
     fun updateHoldings(newList: List<PortfolioHolding>) {
@@ -284,17 +289,27 @@ fun PortfolioAnalysisView(modifier: Modifier = Modifier) {
                 withContext(Dispatchers.IO) {
                     tickers.forEach { ticker ->
                         try {
-                            val res = YahooRetrofit.service.getChart(ticker, "1d", "1m")
-                            val chartResult = res.chart?.result?.firstOrNull()
-                            val meta = chartResult?.meta
-                            val livePrice = meta?.regularMarketPrice ?: 0.0
-                            val prevClose = meta?.effectivePreviousClose ?: meta?.chartPreviousClose ?: meta?.regularMarketPreviousClose ?: meta?.previousClose ?: livePrice
-                            if (livePrice > 0.0) {
+                            // First check Dhan live websocket feed for zero latency tick
+                            val liveWsQuote = DhanWebSocketManager.liveQuotes.value[ticker]
+                            if (liveWsQuote != null && liveWsQuote.price > 0.0) {
                                 newMap[ticker] = HoldingPriceData(
-                                    price = livePrice,
-                                    previousClose = prevClose,
+                                    price = liveWsQuote.price,
+                                    previousClose = liveWsQuote.price - liveWsQuote.change,
                                     lastUpdatedMs = System.currentTimeMillis()
                                 )
+                            } else {
+                                val res = YahooRetrofit.service.getChart(ticker, "1d", "1m")
+                                val chartResult = res.chart?.result?.firstOrNull()
+                                val meta = chartResult?.meta
+                                val livePrice = meta?.regularMarketPrice ?: 0.0
+                                val prevClose = meta?.effectivePreviousClose ?: meta?.chartPreviousClose ?: meta?.regularMarketPreviousClose ?: meta?.previousClose ?: livePrice
+                                if (livePrice > 0.0) {
+                                    newMap[ticker] = HoldingPriceData(
+                                        price = livePrice,
+                                        previousClose = prevClose,
+                                        lastUpdatedMs = System.currentTimeMillis()
+                                    )
+                                }
                             }
                         } catch (e: Exception) {
                             // Retain existing price if fetch throttled or network fails
@@ -303,7 +318,7 @@ fun PortfolioAnalysisView(modifier: Modifier = Modifier) {
                 }
                 priceMap = newMap
             }
-            delay(30000) // 30-second interval
+            delay(15000) // 15-second interval
         }
     }
 
@@ -431,6 +446,36 @@ fun PortfolioAnalysisView(modifier: Modifier = Modifier) {
             }
         }
 
+        // Dhan Sync Status Banner
+        dhanSyncMessage?.let { msg ->
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { dhanSyncMessage = null },
+                shape = RoundedCornerShape(8.dp),
+                color = Color(0xFFECFDF5),
+                border = BorderStroke(1.dp, Color(0xFF10B981))
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF059669), modifier = Modifier.size(16.dp))
+                        Text(msg, fontSize = 11.sp, color = Color(0xFF065F46), fontWeight = FontWeight.SemiBold)
+                    }
+                    IconButton(onClick = { dhanSyncMessage = null }, modifier = Modifier.size(20.dp)) {
+                        Icon(Icons.Default.Close, contentDescription = "Dismiss", tint = Color(0xFF059669), modifier = Modifier.size(14.dp))
+                    }
+                }
+            }
+        }
+
         // SUBTAB CONTENT
         if (activeSubTab == "PORTFOLIO") {
             // PORTFOLIO TAB
@@ -441,6 +486,7 @@ fun PortfolioAnalysisView(modifier: Modifier = Modifier) {
                 totalCurrentValue = totalCurrentValue,
                 totalProfitLoss = totalProfitLoss,
                 totalProfitLossPct = totalProfitLossPct,
+                isSyncingDhan = isSyncingDhan,
                 onAddClick = {
                     if (holdings.size >= 40) {
                         showLimitDialog = true
@@ -459,20 +505,14 @@ fun PortfolioAnalysisView(modifier: Modifier = Modifier) {
                 },
                 onImportDhan = {
                     coroutineScope.launch {
-                        val quotes = withContext(Dispatchers.IO) { IndianCommodityRepository.fetchAllCommodityQuotes() }
-                        val imported = quotes.map { q ->
-                            PortfolioHolding(
-                                symbol = q.symbol,
-                                quantity = 10.0,
-                                buyPrice = q.price * 0.98,
-                                purchaseDate = "2026-08-01",
-                                broker = "Dhan",
-                                notes = "Imported live from Dhan MCX feed"
-                            )
+                        isSyncingDhan = true
+                        dhanSyncMessage = "Syncing portfolio with Dhan HQ API..."
+                        val result = DhanPortfolioService.fetchDhanPortfolio(context)
+                        isSyncingDhan = false
+                        if (result.holdings.isNotEmpty()) {
+                            updateHoldings(result.holdings)
                         }
-                        if (imported.isNotEmpty()) {
-                            updateHoldings(imported)
-                        }
+                        dhanSyncMessage = result.message
                     }
                 }
             )
@@ -585,6 +625,7 @@ fun MyPortfolioContent(
     totalCurrentValue: Double,
     totalProfitLoss: Double,
     totalProfitLossPct: Double,
+    isSyncingDhan: Boolean = false,
     onAddClick: () -> Unit,
     onEditClick: (PortfolioHolding) -> Unit,
     onDeleteClick: (PortfolioHolding) -> Unit,
@@ -626,7 +667,7 @@ fun MyPortfolioContent(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("$${String.format(Locale.US, "%,.2f", totalCurrentValue)}", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color(0xFF0F172A))
+                        Text("₹${String.format(Locale.US, "%,.2f", totalCurrentValue)}", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color(0xFF0F172A))
                         val isValProfit = totalProfitLoss >= 0
                         val valSign = if (isValProfit) "+" else ""
                         Surface(
@@ -634,7 +675,7 @@ fun MyPortfolioContent(
                             color = if (isValProfit) Color(0xFFDCFCE7) else Color(0xFFFEE2E2)
                         ) {
                             Text(
-                                text = "$valSign${String.format(Locale.US, "%.2f", totalProfitLossPct)}% ($valSign$${String.format(Locale.US, "%,.2f", totalProfitLoss)})",
+                                text = "$valSign${String.format(Locale.US, "%.2f", totalProfitLossPct)}% ($valSign₹${String.format(Locale.US, "%,.2f", totalProfitLoss)})",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (isValProfit) Color(0xFF15803D) else Color(0xFFB91C1C),
@@ -644,15 +685,56 @@ fun MyPortfolioContent(
                     }
                 }
 
-                TextButton(
-                    onClick = onAddClick,
-                    shape = RoundedCornerShape(8.dp),
-                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
-                    modifier = Modifier.height(26.dp)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(12.dp))
-                    Spacer(modifier = Modifier.width(2.dp))
-                    Text("Add", fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    Surface(
+                        modifier = Modifier
+                            .height(28.dp)
+                            .clickable(enabled = !isSyncingDhan, onClick = onImportDhan),
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFF10B981),
+                        shadowElevation = 1.dp
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            if (isSyncingDhan) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(12.dp),
+                                    color = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.CloudDownload,
+                                    contentDescription = "Sync Dhan HQ",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                            }
+                            Text(
+                                text = if (isSyncingDhan) "Syncing..." else "Sync Dhan HQ",
+                                fontSize = 9.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                    }
+
+                    TextButton(
+                        onClick = onAddClick,
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                        modifier = Modifier.height(28.dp)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(12.dp))
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text("Add", fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
 
@@ -667,14 +749,14 @@ fun MyPortfolioContent(
             ) {
                 Column {
                     Text("Total Invested", fontSize = 10.5.sp, color = Color(0xFF64748B))
-                    Text("$${String.format(Locale.US, "%,.2f", totalInvested)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
+                    Text("₹${String.format(Locale.US, "%,.2f", totalInvested)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
                 }
 
                 Column(horizontalAlignment = Alignment.End) {
                     Text("Overall P&L", fontSize = 10.5.sp, color = Color(0xFF64748B))
                     val isProfit = totalProfitLoss >= 0
                     val sign = if (isProfit) "+" else ""
-                    val pnlText = "$sign$${String.format(Locale.US, "%,.2f", totalProfitLoss)} ($sign${String.format(Locale.US, "%.2f", totalProfitLossPct)}%)"
+                    val pnlText = "$sign₹${String.format(Locale.US, "%,.2f", totalProfitLoss)} ($sign${String.format(Locale.US, "%.2f", totalProfitLossPct)}%)"
                     
                     Surface(
                         shape = RoundedCornerShape(4.dp),
@@ -699,14 +781,46 @@ fun MyPortfolioContent(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(30.dp),
+                .padding(24.dp),
             contentAlignment = Alignment.Center
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(Icons.Default.AccountBalanceWallet, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(40.dp))
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("No Holdings Added Yet", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF334155))
-                Text("Tap '+ Add Holding' above to track your investments.", fontSize = 11.5.sp, color = Color(0xFF64748B))
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Icon(Icons.Default.AccountBalanceWallet, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(44.dp))
+                Text("No Holdings Added Yet", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF334155))
+                Text("Fetch your live portfolio directly from Dhan HQ or add positions manually.", fontSize = 11.5.sp, color = Color(0xFF64748B), textAlign = TextAlign.Center)
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(
+                        onClick = onImportDhan,
+                        enabled = !isSyncingDhan,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                    ) {
+                        if (isSyncingDhan) {
+                            CircularProgressIndicator(modifier = Modifier.size(14.dp), color = Color.White, strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Connecting Dhan API...", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+                        } else {
+                            Icon(Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.size(15.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Fetch Portfolio from Dhan HQ", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    OutlinedButton(
+                        onClick = onAddClick,
+                        shape = RoundedCornerShape(10.dp),
+                        border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp), tint = Color(0xFF475569))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Add Manual", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF475569))
+                    }
+                }
             }
         }
     } else {
