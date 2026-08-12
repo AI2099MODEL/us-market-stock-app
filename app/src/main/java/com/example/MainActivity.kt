@@ -1676,7 +1676,6 @@ fun DashboardScreen(modifier: Modifier = Modifier, onSymbolSelected: (String) ->
     var activeSubTab by remember { mutableStateOf("BREAKOUTS") } // "BREAKOUTS", "AUTOTRADER", or "ANALYSIS"
     var selectedStockForAnalysis by remember { mutableStateOf<String?>(null) }
     var scanResults by remember { mutableStateOf<List<ScanResult>>(emptyList()) }
-    var selectedCategoryFilter by remember { mutableStateOf("ALL") } // "ALL", "INDEX_OPTION", "STOCK_OPTION", "COMMODITY"
     var isScanning by remember { mutableStateOf(true) }
     var loadingPercent by remember { mutableIntStateOf(0) }
     var lastFetchedTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -1913,43 +1912,10 @@ fun DashboardScreen(modifier: Modifier = Modifier, onSymbolSelected: (String) ->
                     }
                 }
             } else {
-                val filteredResults = remember(scanResults, selectedCategoryFilter) {
-                    if (selectedCategoryFilter == "ALL") scanResults
-                    else scanResults.filter { it.assetType == selectedCategoryFilter }
+                val filteredResults = remember(scanResults) {
+                    scanResults.filter { it.assetType == "COMMODITY" }
                 }
-
                 Column(modifier = Modifier.fillMaxSize()) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
-                            .padding(horizontal = 6.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        val filters = listOf(
-                            "ALL" to "All",
-                            "COMMODITY" to "MCX Commodities"
-                        )
-                        filters.forEach { (typeKey, label) ->
-                            val isSelected = selectedCategoryFilter == typeKey
-                            Surface(
-                                onClick = { selectedCategoryFilter = typeKey },
-                                shape = RoundedCornerShape(12.dp),
-                                color = if (isSelected) Color(0xFF7C3AED) else Color.White,
-                                border = BorderStroke(1.dp, if (isSelected) Color(0xFF7C3AED) else Color(0xFFCBD5E1))
-                            ) {
-                                Text(
-                                    text = label,
-                                    fontSize = 9.sp,
-                                    maxLines = 1,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (isSelected) Color.White else Color(0xFF475569),
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
-                                )
-                            }
-                        }
-                    }
-
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(2),
                         modifier = Modifier
