@@ -611,6 +611,14 @@ private fun getTradeSubtitle(trade: VirtualTrade): String {
 
 @Composable
 fun ActiveTradeCardItem(trade: VirtualTrade) {
+    val liveQuotes by DhanWebSocketManager.liveQuotes.collectAsState()
+    val baseComm = IndianCommodityRepository.resolveBaseSymbol(trade.ticker)
+    val liveQuote = liveQuotes[trade.ticker] ?: liveQuotes[baseComm]
+    val currentCmp = liveQuote?.price ?: trade.currentPrice
+    val profitPct = if (trade.entryPrice > 0.0) ((currentCmp - trade.entryPrice) / trade.entryPrice) * 100.0 else trade.profitPercent
+    val grossProfit = trade.allocatedAmount * (profitPct / 100.0)
+    val netProfit = grossProfit - 30.0
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -628,16 +636,16 @@ fun ActiveTradeCardItem(trade: VirtualTrade) {
                     Text(getTradeSubtitle(trade), fontSize = 11.sp, color = Color(0xFF64748B), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
 
-                val pColor = if (trade.profitPercent >= 0) Color(0xFF16A34A) else Color(0xFFDC2626)
+                val pColor = if (profitPct >= 0) Color(0xFF16A34A) else Color(0xFFDC2626)
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = "₹${String.format("%.2f", trade.currentPrice)}",
+                        text = "₹${String.format("%.2f", currentCmp)}",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color(0xFF1E293B)
                     )
                     Text(
-                        text = "${if (trade.profitPercent >= 0) "+" else ""}${String.format("%.2f", trade.profitPercent)}% (₹${String.format("%.0f", trade.profitAmount)})",
+                        text = "${if (profitPct >= 0) "+" else ""}${String.format("%.2f", profitPct)}% (₹${String.format("%.0f", netProfit)})",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = pColor

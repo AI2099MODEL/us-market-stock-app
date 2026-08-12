@@ -257,6 +257,13 @@ object IndianCommodityRepository {
         val entry = COMMODITY_TICKERS[baseSymbol] ?: return@withContext null
         val (name, _) = entry
 
+        // 0. Priority: Dhan WebSocket & Live Stream Feed
+        val liveWsQuote = DhanWebSocketManager.liveQuotes.value[symbolKey.uppercase()]
+            ?: DhanWebSocketManager.liveQuotes.value[baseSymbol]
+        if (liveWsQuote != null && liveWsQuote.price > 0.0) {
+            return@withContext liveWsQuote
+        }
+
         // 1. Try Dhan API
         try {
             val dhanResponse = dhanRetrofit.getCommodityQuote(baseSymbol.lowercase())

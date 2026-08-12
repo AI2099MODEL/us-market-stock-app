@@ -56,6 +56,12 @@ object MarketEngine {
     }
 
     private suspend fun fetchStockOrIndexPrice(ticker: String): Double {
+        val clean = ticker.replace(".NS", "").replace("^", "").uppercase()
+        val liveWsQuote = DhanWebSocketManager.liveQuotes.value[ticker]
+            ?: DhanWebSocketManager.liveQuotes.value[clean]
+        if (liveWsQuote != null && liveWsQuote.price > 0.0) {
+            return liveWsQuote.price
+        }
         return try {
             val res = YahooRetrofit.service.getChart(ticker, "1d", "1m")
             val meta = res.chart?.result?.firstOrNull()?.meta
@@ -73,6 +79,15 @@ object MarketEngine {
 
     suspend fun fetchRealMarketPrice(ticker: String, entryPrice: Double = 0.0): Double = withContext(Dispatchers.IO) {
         val upper = ticker.uppercase().trim()
+        val cleanTicker = upper.split(" ").firstOrNull() ?: upper
+
+        // 0. Primary Source: Dhan WebSocket & Live Stream Feed (Zero Latency)
+        val liveWsQuote = DhanWebSocketManager.liveQuotes.value[upper]
+            ?: DhanWebSocketManager.liveQuotes.value[cleanTicker]
+            ?: DhanWebSocketManager.liveQuotes.value[IndianCommodityRepository.resolveBaseSymbol(upper)]
+        if (liveWsQuote != null && liveWsQuote.price > 0.0) {
+            return@withContext liveWsQuote.price
+        }
 
         // 1. Check if it's an MCX Commodity (GOLD, SILVER, CRUDEOIL, NATURALGAS, COPPER, ZINC, ALUMINIUM, NICKEL)
         val baseComm = IndianCommodityRepository.resolveBaseSymbol(upper)
