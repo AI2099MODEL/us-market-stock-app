@@ -66,8 +66,8 @@ object LiveDividendManager {
                 You are a real-time Indian Stock Market Data Engine connected LIVE to internet financial feeds (NSE/BSE).
                 Today's date is $todayStr.
                 
-                Search the web and list 15-20 active, announced, or upcoming corporate dividends for Indian stocks listed on NSE/BSE for current and upcoming months.
-                Include high-yield PSUs, IT majors, Banking, FMCG, and Energy companies (e.g. TCS, INFY, ITC, COALINDIA, VEDL, HINDUNILVR, BPCL, IOC, ONGC, NTPC, POWERGRID, PFC, RECLTD, HCLTECH, LICI, TATAMOTORS, SBIN, GAIL, NMDC, etc.).
+                Search the web and list 25-30 active, announced, or upcoming corporate dividends for Indian stocks from the NIFTY 200 index listed on NSE/BSE for current and upcoming months.
+                Include major NIFTY 200 companies across sectors: High-Yield PSUs, IT Majors, Banking/NBFCs, FMCG, Auto, Pharma, Metals, and Energy (e.g., TCS, INFY, ITC, COALINDIA, VEDL, HINDUNILVR, BPCL, IOC, ONGC, NTPC, POWERGRID, PFC, RECLTD, HCLTECH, LICI, TATAMOTORS, SBIN, GAIL, NMDC, RELIANCE, LT, AXISBANK, ICICIBANK, BHARTIARTL, HDFCBANK, TITAN, BAJFINANCE, SUNPHARMA, NESTLEIND, MARUTI, ULTRACEMCO, BEL, HAL, JSWSTEEL, TATASTEEL, etc.).
 
                 For each company, provide:
                 1. symbol (NSE Ticker, e.g. "TCS")
@@ -183,7 +183,6 @@ object LiveDividendManager {
     }
 
     private fun getDefaultIndianDividends(): List<UpcomingDividend> {
-        val c = Calendar.getInstance()
         fun getFutureDate(daysAhead: Int): String {
             val cal = Calendar.getInstance()
             cal.add(Calendar.DAY_OF_YEAR, daysAhead)
@@ -209,7 +208,18 @@ object LiveDividendManager {
             UpcomingDividend("TATAMOTORS", "Tata Motors Limited", 6.00, "Final Dividend", getFutureDate(48), getFutureDate(50), 1080.00, 0.56),
             UpcomingDividend("SBIN", "State Bank of India", 13.70, "Final Dividend", getFutureDate(52), getFutureDate(54), 840.00, 1.63),
             UpcomingDividend("GAIL", "GAIL (India) Limited", 5.50, "Interim Dividend", getFutureDate(56), getFutureDate(58), 230.00, 2.39),
-            UpcomingDividend("NMDC", "NMDC Limited", 5.75, "Interim Dividend", getFutureDate(60), getFutureDate(62), 260.00, 2.21)
+            UpcomingDividend("NMDC", "NMDC Limited", 5.75, "Interim Dividend", getFutureDate(60), getFutureDate(62), 260.00, 2.21),
+            UpcomingDividend("RELIANCE", "Reliance Industries Ltd.", 10.00, "Final Dividend", getFutureDate(64), getFutureDate(66), 2980.00, 0.34),
+            UpcomingDividend("LT", "Larsen & Toubro Ltd.", 28.00, "Final Dividend", getFutureDate(68), getFutureDate(70), 3650.00, 0.77),
+            UpcomingDividend("ICICIBANK", "ICICI Bank Limited", 10.00, "Final Dividend", getFutureDate(72), getFutureDate(74), 1180.00, 0.85),
+            UpcomingDividend("HDFCBANK", "HDFC Bank Limited", 19.50, "Final Dividend", getFutureDate(76), getFutureDate(78), 1620.00, 1.20),
+            UpcomingDividend("BHARTIARTL", "Bharti Airtel Limited", 8.00, "Final Dividend", getFutureDate(80), getFutureDate(82), 1450.00, 0.55),
+            UpcomingDividend("BEL", "Bharat Electronics Ltd.", 1.50, "Final Dividend", getFutureDate(84), getFutureDate(86), 310.00, 0.48),
+            UpcomingDividend("HAL", "Hindustan Aeronautics Ltd.", 22.00, "Final Dividend", getFutureDate(88), getFutureDate(90), 4750.00, 0.46),
+            UpcomingDividend("SUNPHARMA", "Sun Pharmaceutical Inds.", 13.50, "Final Dividend", getFutureDate(92), getFutureDate(94), 1710.00, 0.79),
+            UpcomingDividend("TITAN", "Titan Company Limited", 11.00, "Final Dividend", getFutureDate(96), getFutureDate(98), 3420.00, 0.32),
+            UpcomingDividend("NESTLEIND", "Nestle India Limited", 8.50, "Interim Dividend", getFutureDate(100), getFutureDate(102), 2510.00, 0.34),
+            UpcomingDividend("MARUTI", "Maruti Suzuki India Ltd.", 125.00, "Final Dividend", getFutureDate(104), getFutureDate(106), 12400.00, 1.01)
         )
     }
 }

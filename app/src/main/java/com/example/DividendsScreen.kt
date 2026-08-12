@@ -579,7 +579,7 @@ fun DividendsScreen(
                                 .background(if (isLoading) Color(0xFFEAB308) else Color(0xFF16A34A))
                         )
                         Text(
-                            text = "Indian Corporate Dividends (NSE / BSE)",
+                            text = "NIFTY 200 Corporate Dividends (NSE / BSE)",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF1E293B)
@@ -714,10 +714,10 @@ fun DividendsScreen(
             }
         } else {
             LazyVerticalGrid(
-                columns = GridCells.Fixed(1),
+                columns = GridCells.Fixed(2),
                 modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(bottom = 28.dp)
             ) {
                 items(validUpcomingDividends, key = { it.symbol }) { item ->
@@ -725,6 +725,17 @@ fun DividendsScreen(
                 }
             }
         }
+    }
+}
+
+fun formatCompactDate(dateStr: String): String {
+    try {
+        val sdfInput = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+        val date = sdfInput.parse(dateStr) ?: return dateStr
+        val sdfOutput = SimpleDateFormat("dd MMM yyyy", Locale.US)
+        return sdfOutput.format(date)
+    } catch (e: Exception) {
+        return dateStr
     }
 }
 
@@ -788,18 +799,18 @@ fun DividendCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onSymbolClick() },
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         border = BorderStroke(1.dp, Color(0xFFE2E8F0))
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // Row 1: Dividend Type Badge Tag + Heart Icon
+            // Row 1: Dividend Type Badge + Heart Icon
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -807,119 +818,105 @@ fun DividendCard(
             ) {
                 Surface(
                     color = Color(0xFFF1F5F9),
-                    shape = RoundedCornerShape(6.dp)
+                    shape = RoundedCornerShape(4.dp)
                 ) {
                     Text(
                         text = item.dividendType.ifBlank { "DIVIDEND" }.uppercase(),
                         color = Color(0xFF334155),
-                        fontSize = 9.5.sp,
+                        fontSize = 8.sp,
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.3.sp,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                        letterSpacing = 0.2.sp,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                         maxLines = 1
                     )
                 }
 
                 IconButton(
                     onClick = { isFavorite = !isFavorite },
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(18.dp)
                 ) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = "Bookmark",
                         tint = if (isFavorite) Color(0xFFDC2626) else Color(0xFF94A3B8),
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(14.dp)
                     )
                 }
             }
 
-            // Row 2: Company Icon + Company Name & Ticker Symbol (Left), and Yield (Right)
+            // Row 2: Logo + Ticker + Company Name
             Row(
-                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.weight(1f, fill = false)
-                ) {
-                    CompanyLogoView(symbol = item.symbol, modifier = Modifier.size(32.dp))
+                CompanyLogoView(symbol = item.symbol, modifier = Modifier.size(24.dp))
 
-                    Column {
-                        Text(
-                            text = item.companyName,
-                            fontSize = 14.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0F172A),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = displaySymbol,
-                            fontSize = 11.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF64748B),
-                            maxLines = 1
-                        )
-                    }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = displaySymbol,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0F172A),
+                        maxLines = 1
+                    )
+                    Text(
+                        text = item.companyName,
+                        fontSize = 9.5.sp,
+                        color = Color(0xFF64748B),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
-
-                Text(
-                    text = "Yield: ${String.format(Locale.US, "%.2f", item.yieldPercent)}%",
-                    fontSize = 11.sp,
-                    color = Color(0xFF64748B),
-                    fontWeight = FontWeight.SemiBold
-                )
             }
 
-            // Row 3: Payout Box (left) + Current Price (right)
+            // Row 3: Yield Tag & Payout Amount
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Color(0xFFF8F9FA))
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "Payout: ",
-                            color = Color(0xFF64748B),
-                            fontSize = 11.5.sp,
-                            fontWeight = FontWeight.Normal
-                        )
-                        Text(
-                            text = "₹$formattedPayout",
-                            color = Color(0xFF1F2937),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Black
-                        )
-                    }
+                Column {
+                    Text(
+                        text = "PAYOUT",
+                        fontSize = 7.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF64748B)
+                    )
+                    Text(
+                        text = "₹$formattedPayout",
+                        color = Color(0xFF1F2937),
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.Black
+                    )
                 }
 
-                Text(
-                    text = formattedPrice,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF10B981),
-                    maxLines = 1
-                )
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "${String.format(Locale.US, "%.2f", item.yieldPercent)}% Yield",
+                        fontSize = 9.5.sp,
+                        color = Color(0xFF6D28D9),
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = formattedPrice,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF10B981),
+                        maxLines = 1
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(2.dp))
-            
+            Spacer(modifier = Modifier.height(1.dp))
+
             // Ex-date Banner
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(6.dp))
+                    .clip(RoundedCornerShape(4.dp))
                     .background(Color(0xFFFFF0F1))
-                    .padding(vertical = 6.dp, horizontal = 10.dp)
+                    .padding(vertical = 4.dp, horizontal = 6.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -928,14 +925,14 @@ fun DividendCard(
                 ) {
                     Text(
                         text = "EX-DATE",
-                        fontSize = 9.sp,
+                        fontSize = 7.5.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color(0xFFDC2626),
-                        letterSpacing = 0.3.sp
+                        letterSpacing = 0.2.sp
                     )
                     Text(
-                        text = formatDividendDate(item.exDate),
-                        fontSize = 10.sp,
+                        text = formatCompactDate(item.exDate),
+                        fontSize = 8.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFFDC2626),
                         textAlign = TextAlign.End
@@ -948,9 +945,9 @@ fun DividendCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(6.dp))
+                    .clip(RoundedCornerShape(4.dp))
                     .background(Color(0xFFECFDF5))
-                    .padding(vertical = 6.dp, horizontal = 10.dp)
+                    .padding(vertical = 4.dp, horizontal = 6.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -958,15 +955,15 @@ fun DividendCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "PAYOUT DATE",
-                        fontSize = 9.sp,
+                        text = "PAYOUT",
+                        fontSize = 7.5.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color(0xFF059669),
-                        letterSpacing = 0.3.sp
+                        letterSpacing = 0.2.sp
                     )
                     Text(
-                        text = formatDividendDate(payoutDateStr),
-                        fontSize = 10.sp,
+                        text = formatCompactDate(payoutDateStr),
+                        fontSize = 8.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF059669),
                         textAlign = TextAlign.End
