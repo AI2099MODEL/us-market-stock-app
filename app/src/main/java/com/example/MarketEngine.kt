@@ -158,7 +158,8 @@ object MarketEngine {
 
                     val newHighest = max(max(trade.highestPrice, trade.entryPrice), currentPrice)
 
-                    val profitPct = ((currentPrice - trade.entryPrice) / trade.entryPrice) * 100.0
+                    val isShort = trade.targetPrice < trade.entryPrice
+                        val profitPct = if (isShort) ((trade.entryPrice - currentPrice) / trade.entryPrice) * 100.0 else ((currentPrice - trade.entryPrice) / trade.entryPrice) * 100.0
                     val grossProfitAmt = trade.allocatedAmount * (profitPct / 100.0)
                     val netProfitAmt = grossProfitAmt - mcxFees
 
@@ -280,7 +281,8 @@ object MarketEngine {
 
                         val newHighest = max(max(trade.highestPrice, trade.entryPrice), currentPrice)
 
-                        val profitPct = ((currentPrice - trade.entryPrice) / trade.entryPrice) * 100.0
+                        val isShort = trade.targetPrice < trade.entryPrice
+                        val profitPct = if (isShort) ((trade.entryPrice - currentPrice) / trade.entryPrice) * 100.0 else ((currentPrice - trade.entryPrice) / trade.entryPrice) * 100.0
                         val grossProfitAmt = trade.allocatedAmount * (profitPct / 100.0)
                         val netProfitAmt = grossProfitAmt - mcxFees
 
@@ -390,9 +392,9 @@ object MarketEngine {
                         val targetReached = if (trade.isBtst) {
                             profitPct >= 0.50 // BTST minimum next-day target reached (+0.5% to +1.0%)
                         } else {
-                            currentPrice >= trade.targetPrice
+                            if (isShort) currentPrice <= trade.targetPrice else currentPrice >= trade.targetPrice
                         }
-                        val slHit = currentPrice <= activeStopLoss
+                        val slHit = if (isShort) currentPrice >= activeStopLoss else currentPrice <= activeStopLoss
 
                         if (targetReached) {
                             updatedTrade = updatedTrade.copy(
@@ -430,7 +432,8 @@ object MarketEngine {
             if (remaining.isNotEmpty()) {
                 addLog("⏰ Auto Square-off Time Triggered (3:15 PM): Processing active trades...")
                 remaining.forEach { trade ->
-                    val profitPct = ((trade.currentPrice - trade.entryPrice) / trade.entryPrice) * 100.0
+                    val isShort = trade.targetPrice < trade.entryPrice
+                    val profitPct = if (isShort) ((trade.entryPrice - trade.currentPrice) / trade.entryPrice) * 100.0 else ((trade.currentPrice - trade.entryPrice) / trade.entryPrice) * 100.0
                     val profitAmt = trade.allocatedAmount * (profitPct / 100.0)
                     
                     if (trade.isBtst && profitPct < 1.5) {
@@ -784,7 +787,8 @@ object MarketEngine {
         if (remaining.isNotEmpty()) {
             addLog("Manual Overrule: Squaring off all active trades...")
             remaining.forEach { trade ->
-                val profitPct = ((trade.currentPrice - trade.entryPrice) / trade.entryPrice) * 100.0
+                val isShort = trade.targetPrice < trade.entryPrice
+                    val profitPct = if (isShort) ((trade.entryPrice - trade.currentPrice) / trade.entryPrice) * 100.0 else ((trade.currentPrice - trade.entryPrice) / trade.entryPrice) * 100.0
                 val turnover = trade.allocatedAmount * 2.0
                 val isOptionTrade = trade.name.contains("Option") || trade.ticker.contains("CE") || trade.ticker.contains("PE")
                 val brokerageDetails = IndianCommodityRepository.calculateDhanBrokerage(turnover, isSell = true, isOptions = isOptionTrade)
@@ -808,7 +812,8 @@ object MarketEngine {
     suspend fun manualSquareOffSingleTrade(tradeId: Int, db: AppDatabase) {
         val trade = db.virtualTradeDao().getAllTradesList().firstOrNull { it.id == tradeId }
         if (trade != null && trade.status == "ACTIVE") {
-            val profitPct = ((trade.currentPrice - trade.entryPrice) / trade.entryPrice) * 100.0
+            val isShort = trade.targetPrice < trade.entryPrice
+                    val profitPct = if (isShort) ((trade.entryPrice - trade.currentPrice) / trade.entryPrice) * 100.0 else ((trade.currentPrice - trade.entryPrice) / trade.entryPrice) * 100.0
             val turnover = trade.allocatedAmount * 2.0
             val isOptionTrade = trade.name.contains("Option") || trade.ticker.contains("CE") || trade.ticker.contains("PE")
             val brokerageDetails = IndianCommodityRepository.calculateDhanBrokerage(turnover, isSell = true, isOptions = isOptionTrade)

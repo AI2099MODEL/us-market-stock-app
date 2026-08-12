@@ -616,7 +616,11 @@ fun ActiveTradeCardItem(trade: VirtualTrade) {
     val cleanTicker = trade.ticker.split(" ").firstOrNull() ?: trade.ticker
     val liveQuote = liveQuotes[trade.ticker] ?: liveQuotes[cleanTicker] ?: liveQuotes[baseComm]
     val currentCmp = liveQuote?.price ?: trade.currentPrice
-    val profitPct = if (trade.entryPrice > 0.0) ((currentCmp - trade.entryPrice) / trade.entryPrice) * 100.0 else trade.profitPercent
+    val isShort = trade.targetPrice < trade.entryPrice
+    
+    val profitPct = if (trade.entryPrice > 0.0) {
+        if (isShort) ((trade.entryPrice - currentCmp) / trade.entryPrice) * 100.0 else ((currentCmp - trade.entryPrice) / trade.entryPrice) * 100.0
+    } else trade.profitPercent
     val grossProfit = trade.allocatedAmount * (profitPct / 100.0)
     val netProfit = grossProfit - 30.0
 
@@ -678,10 +682,20 @@ fun ActiveTradeCardItem(trade: VirtualTrade) {
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            val lowerSL = trade.stopLoss
-            val upperTarget = trade.targetPrice
+            val lowerSL = if (isShort) trade.targetPrice else trade.stopLoss
+            val upperTarget = if (isShort) trade.stopLoss else trade.targetPrice
             val totalSpan = upperTarget - lowerSL
-            val pctVal = if (totalSpan > 0) ((trade.currentPrice - lowerSL) / totalSpan).toFloat() else 0.5f
+            
+            // For shorts, progressing towards lower values is 'good', but for rendering:
+            // left (red) is SL, right (green) is target
+            // For a short, SL is high price, Target is low price.
+            // When price goes DOWN towards target, it should fill up towards right (green).
+            val progressRaw = if (isShort) {
+                (trade.stopLoss - currentCmp) / (trade.stopLoss - trade.targetPrice)
+            } else {
+                (currentCmp - trade.stopLoss) / (trade.targetPrice - trade.stopLoss)
+            }
+            val pctVal = if (totalSpan > 0) progressRaw.toFloat() else 0.5f
             val boundedPct = pctVal.coerceIn(0f, 1f)
 
             Box(

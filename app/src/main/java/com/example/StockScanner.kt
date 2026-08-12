@@ -137,64 +137,6 @@ object StockScanner {
         }
         results.addAll(deferreds.awaitAll().filterNotNull())
 
-        // 2. Index Options Scans (Only NIFTY, BANKNIFTY, SENSEX Weekly)
-        INDEX_OPTIONS_PRESETS.forEach { (symbol, name, underlyingSpot) ->
-            val optionPremium = when {
-                symbol.contains("NIFTY") && !symbol.contains("BANK") -> 148.5
-                symbol.contains("BANKNIFTY") -> 310.0
-                symbol.contains("SENSEX") -> 210.0
-                else -> 125.0
-            }
-            val isCall = symbol.contains("CE")
-            val target1 = optionPremium * 1.20 // +20% Option Gain Target 1
-            val target2 = optionPremium * 1.40 // +40% Option Gain Target 2
-            val stopLoss = optionPremium * 0.88 // -12% Option Premium Stop Loss
-
-            results.add(
-                ScanResult(
-                    ticker = symbol,
-                    name = name,
-                    price = optionPremium,
-                    strategies = "RSI > 65, 20-Day Resistance Breakout, ATM Volume Spike",
-                    score = if (isCall) 92 else 88,
-                    reasons = "• Underlying spot trading at ₹${String.format("%,.1f", underlyingSpot)} above resistance\n• High Option Call/Put Ratio momentum build-up",
-                    signalStrength = if (isCall) "STRONG INDEX CALL BREAKOUT" else "STRONG INDEX PUT BREAKDOWN",
-                    stopLoss = stopLoss,
-                    target1 = target1,
-                    target2 = target2,
-                    change = optionPremium * 0.12,
-                    changePercent = 12.0,
-                    isBtst = false,
-                    assetType = "INDEX_OPTION"
-                )
-            )
-        }
-
-        // Top 5 Morning Breakout Equity Stocks (High Relative Volume RVOL > 2.5x & BTST Weekly)
-        TOP_5_MORNING_BREAKOUT_STOCKS.forEach { preset ->
-            val stopLoss = preset.price * 0.982 // -1.8% Stop Loss
-            val target1 = preset.price * 1.035 // +3.5% Target 1
-            val target2 = preset.price * 1.070 // +7.0% Target 2
-            results.add(
-                ScanResult(
-                    ticker = preset.ticker,
-                    name = preset.name,
-                    price = preset.price,
-                    strategies = "High RVOL (${preset.rvol}), Morning Breakout, Weekly Resistance Cleared",
-                    score = preset.score,
-                    reasons = "• Volume surge ${preset.rvol} above 10-day avg volume\n• Weekly chart breakout & strong institutional buying\n• Ideal for BTST carry-forward at 3:00 PM IST",
-                    signalStrength = "HIGH RVOL MORNING BREAKOUT",
-                    stopLoss = stopLoss,
-                    target1 = target1,
-                    target2 = target2,
-                    change = preset.price * 0.024,
-                    changePercent = 2.4,
-                    isBtst = true,
-                    assetType = "EQUITY"
-                )
-            )
-        }
-
         results.sortedByDescending { it.score }
     }
 }

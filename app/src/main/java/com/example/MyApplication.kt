@@ -75,13 +75,13 @@ class MyApplication : Application() {
         
         // Clear all previous trades, profit logs, and scanned breakouts for complete fresh trading reset
         val prefs = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
-        if (!prefs.getBoolean("fresh_trade_reset_v16", false)) {
+        if (!prefs.getBoolean("fresh_trade_reset_v17", false)) {
             CoroutineScope(Dispatchers.IO).launch {
                 database.virtualTradeDao().clearAllTrades()
                 database.profitLogDao().clearAllLogs()
                 database.scannedBreakoutDao().clearAll()
                 MarketEngine.engineLogs.value = emptyList()
-                prefs.edit().putBoolean("fresh_trade_reset_v16", true).apply()
+                prefs.edit().putBoolean("fresh_trade_reset_v17", true).apply()
             }
         }
     }
