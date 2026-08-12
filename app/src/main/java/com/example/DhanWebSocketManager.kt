@@ -148,30 +148,19 @@ object DhanWebSocketManager {
             }
 
             while (isActive) {
-                delay(1500) // Zero-latency tick updates for active trade scorecards
+                delay(5000) // Live tick updates from Dhan & Exchange feed
                 _tickCount.value += 1
                 _lastHeartbeat.value = System.currentTimeMillis()
                 if (!_connectionStatus.value.contains("CONNECTED")) {
                     _connectionStatus.value = "STREAMING (LIVE TICK FEED)"
                 }
-                val currentMap = _liveQuotes.value.toMutableMap()
-                for ((symbol, quote) in currentMap) {
-                    val jitter = (Math.random() - 0.49) * 0.002
-                    val newPrice = quote.price * (1.0 + jitter)
-                    val newChange = newPrice - (quote.price - quote.change)
-                    val newChangePct = if (quote.price > 0) (newChange / quote.price) * 100.0 else quote.changePercent
-                    
-                    currentMap[symbol] = quote.copy(
-                        price = newPrice,
-                        change = newChange,
-                        changePercent = newChangePct,
-                        high = maxOf(quote.high, newPrice),
-                        low = minOf(quote.low, newPrice),
-                        volume = quote.volume + (1..20).random(),
-                        source = "DHAN_WEBSOCKET_FEED"
-                    )
+                try {
+                    val freshQuotes = IndianCommodityRepository.fetchAllCommodityQuotes()
+                    val map = freshQuotes.associateBy { it.symbol }
+                    _liveQuotes.value = map
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
-                _liveQuotes.value = currentMap
             }
         }
     }

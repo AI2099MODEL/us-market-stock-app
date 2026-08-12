@@ -55,6 +55,78 @@ object MarketEngine {
         SupabaseSyncManager.publishLog(log)
     }
 
+    private suspend fun fetchStockOrIndexPrice(ticker: String): Double {
+        return try {
+            val res = YahooRetrofit.service.getChart(ticker, "1d", "1m")
+            val meta = res.chart?.result?.firstOrNull()?.meta
+            meta?.regularMarketPrice ?: 0.0
+        } catch (e: Exception) {
+            0.0
+        }
+    }
+
+    private fun extractStrikePrice(ticker: String): Double? {
+        val regex = Regex("""\b(\d{3,5})\b""")
+        val match = regex.find(ticker)
+        return match?.groupValues?.get(1)?.toDoubleOrNull()
+    }
+
+    suspend fun fetchRealMarketPrice(ticker: String, entryPrice: Double = 0.0): Double = withContext(Dispatchers.IO) {
+        val upper = ticker.uppercase().trim()
+
+        // 1. Check if it's an MCX Commodity (GOLD, SILVER, CRUDEOIL, NATURALGAS, COPPER, ZINC, ALUMINIUM, NICKEL)
+        val baseComm = IndianCommodityRepository.resolveBaseSymbol(upper)
+        if (IndianCommodityRepository.COMMODITY_TICKERS.containsKey(baseComm)) {
+            val commQuote = IndianCommodityRepository.fetchCommodityData(baseComm)
+            if (commQuote != null && commQuote.price > 0.0) {
+                return@withContext commQuote.price
+            }
+        }
+
+        // 2. Check if it's an Option Trade (e.g. "RELIANCE 2980 CE", "NIFTY 24500 CE", "BANKNIFTY 52200 CE", "SBIN 840 PE")
+        if (upper.contains("CE") || upper.contains("PE") || upper.contains("OPTION")) {
+            val underlyingTicker = when {
+                upper.contains("NIFTY") && !upper.contains("BANK") && !upper.contains("FIN") -> "^NSEI"
+                upper.contains("BANKNIFTY") -> "^NSEBANK"
+                upper.contains("FINNIFTY") -> "^NSEI"
+                upper.contains("RELIANCE") -> "RELIANCE.NS"
+                upper.contains("HDFCBANK") -> "HDFCBANK.NS"
+                upper.contains("ICICIBANK") -> "ICICIBANK.NS"
+                upper.contains("INFY") -> "INFY.NS"
+                upper.contains("TCS") -> "TCS.NS"
+                upper.contains("SBIN") -> "SBIN.NS"
+                upper.contains("BHARTIARTL") -> "BHARTIARTL.NS"
+                upper.contains("TATAMOTORS") -> "TATAMOTORS.NS"
+                upper.contains("TATASTEEL") -> "TATASTEEL.NS"
+                upper.contains("M&M") -> "M&M.NS"
+                else -> {
+                    val token = upper.split(" ").firstOrNull() ?: ""
+                    if (token.isNotEmpty()) "$token.NS" else "^NSEI"
+                }
+            }
+
+            val spotPrice = fetchStockOrIndexPrice(underlyingTicker)
+            val strikePrice = extractStrikePrice(upper) ?: spotPrice
+
+            if (spotPrice > 0.0 && entryPrice > 0.0) {
+                val isPut = upper.contains("PE")
+                val underlyingChangePct = if (strikePrice > 0.0) ((spotPrice - strikePrice) / strikePrice) * 100.0 else 0.0
+                val optionPriceChangePct = if (isPut) -underlyingChangePct * 8.0 else underlyingChangePct * 8.0
+                val computedOptionPrice = entryPrice * (1.0 + (optionPriceChangePct / 100.0))
+                return@withContext maxOf(1.0, computedOptionPrice)
+            }
+        }
+
+        // 3. Equity Stock Ticker (e.g. "TATAMOTORS", "RELIANCE.NS", "BHARTIARTL", "M&M")
+        val stockTicker = if (upper.endsWith(".NS") || upper.startsWith("^")) upper else "$upper.NS"
+        val stockPrice = fetchStockOrIndexPrice(stockTicker)
+        if (stockPrice > 0.0) {
+            return@withContext stockPrice
+        }
+
+        return@withContext if (entryPrice > 0.0) entryPrice else 100.0
+    }
+
     suspend fun updateActiveTradesPrices() = withContext(Dispatchers.IO) {
         val db = MyApplication.database
         val activeTrades = db.virtualTradeDao().getActiveTrades()
@@ -63,20 +135,7 @@ object MarketEngine {
         activeTrades.map { trade ->
             async {
                 try {
-                    val commQuote = IndianCommodityRepository.fetchCommodityData(trade.ticker)
-                    val fetchedPrice = if (commQuote != null && commQuote.price > 0.0) {
-                        commQuote.price
-                    } else {
-                        val yfTicker = IndianCommodityRepository.COMMODITY_TICKERS[trade.ticker.uppercase()]?.second ?: trade.ticker
-                        val res = YahooRetrofit.service.getChart(yfTicker, "1d", "1m")
-                        res.chart?.result?.firstOrNull()?.meta?.regularMarketPrice ?: trade.currentPrice
-                    }
-                    
-                    // High-frequency live CMP update with continuous realistic tick jitter matching Dhan live feed
-                    val jitter = (Math.random() - 0.48) * 0.003
-                    val baseRefPrice = if (fetchedPrice > 0.0) fetchedPrice else trade.currentPrice
-                    val currentPrice = baseRefPrice * (1.0 + jitter)
-                    
+                    val currentPrice = fetchRealMarketPrice(trade.ticker, trade.entryPrice)
                     val isOptionTrade = trade.name.contains("Option") || trade.ticker.contains("CE") || trade.ticker.contains("PE")
                     
                     val turnover = trade.allocatedAmount * 2.0
@@ -196,20 +255,7 @@ object MarketEngine {
             refreshedActiveTrades.map { trade ->
                 async {
                     try {
-                        val commQuote = IndianCommodityRepository.fetchCommodityData(trade.ticker)
-                        val fetchedPrice = if (commQuote != null && commQuote.price > 0.0) {
-                            commQuote.price
-                        } else {
-                            val yfTicker = IndianCommodityRepository.COMMODITY_TICKERS[trade.ticker.uppercase()]?.second ?: trade.ticker
-                            val res = YahooRetrofit.service.getChart(yfTicker, "1d", "1m")
-                            res.chart?.result?.firstOrNull()?.meta?.regularMarketPrice ?: trade.currentPrice
-                        }
-                        
-                        // Ensure live dynamic price refresh with continuous realistic market tick jitter
-                        val jitter = (Math.random() - 0.47) * 0.004
-                        val baseRefPrice = if (fetchedPrice > 0.0) fetchedPrice else trade.currentPrice
-                        val currentPrice = baseRefPrice * (1.0 + jitter)
-                        
+                        val currentPrice = fetchRealMarketPrice(trade.ticker, trade.entryPrice)
                         val isOptionTrade = trade.name.contains("Option") || trade.ticker.contains("CE") || trade.ticker.contains("PE")
                         
                         // Calculate Indian MCX Brokerage & Regulatory Charges (Brokerage, STT, Exchange, GST, SEBI, Stamp Duty) via Dhan
