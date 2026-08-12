@@ -120,13 +120,25 @@ object LiveDividendManager {
             Log.e(TAG, "Gemini Live Grounding dividend fetch failed", e)
         }
 
-        // Attempt 2: Live Market Quote Enrichment & Fallback via Yahoo Finance (.NS)
+        // Attempt 2: Live Market Quote Enrichment via Shoonya API (Fallback to Yahoo)
         val baseList = fetchedList ?: liveDividends.value.ifEmpty { getDefaultIndianDividends() }
         val updatedList = baseList.map { item ->
             try {
-                val yahooSymbol = if (item.symbol.contains(".")) item.symbol else "${item.symbol}.NS"
-                val resp = YahooRetrofit.service.getChart(yahooSymbol, "1d", "1m")
-                val price = resp.chart?.result?.firstOrNull()?.meta?.regularMarketPrice
+                var price: Double? = null
+                
+                // 1. Try Shoonya API first
+                val token = ShoonyaApiService.searchScrip(item.symbol.replace(".NS", ""), "NSE")
+                if (token != null) {
+                    price = ShoonyaApiService.getQuote("NSE", token)
+                }
+                
+                // 2. Fallback to Yahoo Finance
+                if (price == null || price <= 0.0) {
+                    val yahooSymbol = if (item.symbol.contains(".")) item.symbol else "${item.symbol}.NS"
+                    val resp = YahooRetrofit.service.getChart(yahooSymbol, "1d", "1m")
+                    price = resp.chart?.result?.firstOrNull()?.meta?.regularMarketPrice
+                }
+                
                 if (price != null && price > 0) {
                     val newYield = (item.amountPerShare / price) * 100
                     item.copy(cmp = price, yieldPercent = newYield)

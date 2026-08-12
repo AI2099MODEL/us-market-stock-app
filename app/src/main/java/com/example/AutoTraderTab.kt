@@ -132,7 +132,7 @@ fun AutoTraderTabContent(modifier: Modifier = Modifier) {
 
         // Dhan WebSocket Connection Debugger
         item {
-            DhanWebSocketDebugCard()
+            ShoonyaWebSocketDebugCard()
         }
 
         // Clear all trade history button

@@ -25,7 +25,7 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun DhanWebSocketDebugCard(modifier: Modifier = Modifier) {
+fun ShoonyaWebSocketDebugCard(modifier: Modifier = Modifier) {
     val status by ShoonyaWebSocketManager.connectionStatus.collectAsState()
     val tickCount by ShoonyaWebSocketManager.tickCount.collectAsState()
     val lastHeartbeat by ShoonyaWebSocketManager.lastHeartbeat.collectAsState()
@@ -68,7 +68,7 @@ fun DhanWebSocketDebugCard(modifier: Modifier = Modifier) {
                             .background(statusColor)
                     )
                     Text(
-                        text = "Dhan WebSocket Debugger",
+                        text = "Shoonya WebSocket Debugger",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface

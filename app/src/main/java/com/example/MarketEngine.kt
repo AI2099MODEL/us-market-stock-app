@@ -36,7 +36,7 @@ object MarketEngine {
     val isScanning = MutableStateFlow(false)
 
     // A flag to simulate market hours even if the actual US stock market is closed
-    val isSimulationMode = MutableStateFlow(true)
+    val isSimulationMode = MutableStateFlow(false)
     val winRatePercent = MutableStateFlow(86.5)
     val isPausedForUserConfirmation = MutableStateFlow(false)
     val confirmationPromptMessage = MutableStateFlow<String?>(null)
